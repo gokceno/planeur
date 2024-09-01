@@ -35,7 +35,6 @@ export function Layout({ children }) {
 export default function App() {
   return (
     <div className="container mx-auto p-4">
-      {/* Navigation */}
       <nav className="flex justify-between items-center mb-4 bg-blue-800 p-2 rounded shadow">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold text-white">Planeur</h1>
