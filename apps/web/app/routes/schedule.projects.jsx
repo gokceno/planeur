@@ -5,7 +5,7 @@ import CapacityBar from "../components/capacity-bar.jsx";
 
 export const loader = () => {
   const startsOn = "2024-08-31";
-  const endsOn = "2024-09-06";
+  const endsOn = "2024-09-07";
   const projects = [
     {
       projectName: "VillaSepeti Web",
@@ -73,7 +73,7 @@ const Projects = () => {
                 startsOn={startsOn}
                 endsOn={endsOn}
                 capacities={capacities}
-                barColorClassName="bg-pink-200"
+                barColorClassName={"bg-pink-200"}
               />
             </div>
           </div>
