@@ -1,5 +1,5 @@
 import { useState } from "react";
-import DateHeaders from "../components/date-header.jsx";
+import DateHeader from "../components/date-header.jsx";
 
 const Team = () => {
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
@@ -8,7 +8,7 @@ const Team = () => {
   };
   return (
     <div className="p-4">
-      <DateHeaders />
+      <DateHeader />
       <div className="space-y-2">
         {["Alanna Rowan", "Arun Srinivasan"].map((member, index) => (
           <div key={index}>

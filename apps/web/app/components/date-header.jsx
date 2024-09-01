@@ -1,4 +1,4 @@
-const DateHeaders = () => {
+const DateHeader = () => {
   return (
     <div className="grid grid-cols-7 gap-2 mb-4 text-sm font-semibold text-center">
       {[
@@ -16,4 +16,4 @@ const DateHeaders = () => {
   );
 }
 
-export default DateHeaders;
+export default DateHeader;
