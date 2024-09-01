@@ -16,6 +16,7 @@
     "@remix-run/react": "^2.11.0",
     "@remix-run/serve": "^2.11.0",
     "isbot": "4",
+    "luxon": "^3.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
