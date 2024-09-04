@@ -9,7 +9,7 @@ const DateHeader = ({ startsOn: _startsOn, endsOn: _endsOn }) => {
     .map((i) => i.start);
 
   return (
-    <div className="grid grid-cols-7 gap-2 mb-4 text-sm font-semibold text-center">
+    <div className="grid grid-cols-7 gap-2 mb-4 text-sm font-semibold">
       {spans.map((date, index) => (
         <div key={index}>{date.toFormat('LLL dd')}</div>
       ))}

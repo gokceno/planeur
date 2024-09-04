@@ -70,10 +70,10 @@ const Projects = () => {
                 </div>
               </div>
               <CapacityBar
+                title={projectName}
                 startsOn={startsOn}
                 endsOn={endsOn}
                 capacities={capacities}
-                barColorClassName={"bg-pink-200"}
               />
             </div>
           </div>
