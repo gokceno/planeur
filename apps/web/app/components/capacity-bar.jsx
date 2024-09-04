@@ -9,8 +9,7 @@ const CapacityBar = ({
 }) => {
   const startsOn = DateTime.fromISO(_startsOn);
   const endsOn = DateTime.fromISO(_endsOn);
-  const daySpan = endsOn.diff(startsOn, "days").days;
-  const maxColSpans = 5;
+  const maxColSpans = 7;
   const daySpanInterval = Interval.fromDateTimes(startsOn, endsOn);
   const capacities = _capacities
     .sort((a, b) =>
@@ -27,14 +26,17 @@ const CapacityBar = ({
           .days || 0;
       return {
         capacity: c.capacity,
-        classNames: ["col-span-" + span],
+        classNames: ["col-span-" + (span + 1)],
         span,
       };
     });
-  const remainingSpans = capacities.reduce((a, c) => a - c.span, maxColSpans);
+  const remainingSpans = capacities.reduce(
+    (a, c) => a - c.span - 1,
+    maxColSpans
+  );
   const { backgroundColor, textColor } = useTailwindColor(title);
   return (
-    <div className="w-3/4 grid grid-cols-5 gap-1">
+    <div className="w-3/4 grid grid-cols-7 gap-1">
       {capacities.map(({ classNames, capacity }, i) => (
         <div
           key={i}

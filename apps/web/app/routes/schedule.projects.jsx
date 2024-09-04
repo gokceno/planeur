@@ -32,7 +32,7 @@ export const loader = () => {
         },
         {
           startsOn: "2024-09-03",
-          endsOn: "2024-09-06",
+          endsOn: "2024-09-04",
           capacity: 0.5,
         },
       ],
