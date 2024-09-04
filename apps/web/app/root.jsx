@@ -38,15 +38,24 @@ export default function App() {
       <nav className="flex justify-between items-center mb-4 bg-blue-800 p-2 rounded shadow">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold text-white">Planeur</h1>
-          <Link to="/schedule/" className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-600">
+          <Link
+            to="/schedule/"
+            className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-600"
+          >
             Schedule
           </Link>
-          <Link to="/manage/" className="px-4 py-2 text-white hover:bg-blue-700">
+          <Link
+            to="/manage/"
+            className="px-4 py-2 text-white hover:bg-blue-700"
+          >
             Manage
           </Link>
         </div>
         <div className="flex items-center space-x-2">
-          <Link to="/settings" className="p-2 bg-blue-700 rounded-full hover:bg-blue-600">
+          <Link
+            to="/settings"
+            className="p-2 bg-blue-700 rounded-full hover:bg-blue-600"
+          >
             <svg
               className="w-6 h-6 text-white"
               fill="none"
