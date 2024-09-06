@@ -28,6 +28,7 @@ const CapacityBar = ({
         capacity: c.capacity,
         classNames: ["col-span-" + (span + 1)],
         span,
+        isGap: c.isGap,
       };
     });
   const remainingSpans = capacities.reduce(
@@ -37,14 +38,19 @@ const CapacityBar = ({
   const { backgroundColor, textColor } = useTailwindColor(title);
   return (
     <div className="w-3/4 grid grid-cols-7 gap-1">
-      {capacities.map(({ classNames, capacity }, i) => (
+      {capacities.map(({ classNames, capacity, isGap }, i) => (
         <div
           key={i}
-          className={[textColor, "p-2", "rounded", "bg-" + backgroundColor]
+          className={[
+            textColor,
+            "p-2",
+            "rounded",
+            isGap ? "bg-gray-200" : "bg-" + backgroundColor,
+          ]
             .concat(classNames)
             .join(" ")}
         >
-          {capacity} h/d
+          {isGap !== true && capacity + "h/d"}
         </div>
       ))}
       {remainingSpans > 0 && remainingSpans <= maxColSpans && (
