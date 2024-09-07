@@ -1,9 +1,42 @@
 import { DateTime, Interval } from "luxon";
 import { useTailwindColor } from "../hooks/color.js";
 
+const transformGaps = (capacities) => {
+  if (!capacities || capacities.length < 2) {
+    return capacities; // Return original capacities if there's not enough entries
+  }
+  const unGappedCapacities = [];
+  const sortedCapacities = capacities.sort((a, b) =>
+    DateTime.fromISO(a.startsOn) < DateTime.fromISO(b.startsOn) ? -1 : 1
+  );
+  for (let i = 0; i < sortedCapacities.length; i++) {
+    const current = sortedCapacities[i];
+    unGappedCapacities.push(current);
+    if (i < sortedCapacities.length - 1) {
+      const next = sortedCapacities[i + 1];
+      const currentEndDate = DateTime.fromISO(current.endsOn);
+      const nextStartDate = DateTime.fromISO(next.startsOn);
+      // Check if there's a gap
+      if (currentEndDate.plus({ days: 1 }) < nextStartDate) {
+        const gapInterval = Interval.fromDateTimes(
+          currentEndDate.plus({ days: 1 }),
+          nextStartDate.minus({ days: 1 })
+        );
+        unGappedCapacities.push({
+          startsOn: gapInterval.start.toISODate(),
+          endsOn: gapInterval.end.toISODate(),
+          capacity: 0,
+          isGap: true,
+        });
+      }
+    }
+  }
+  return unGappedCapacities;
+};
+
 const CapacityBar = ({
   title,
-  capacities: _capacities,
+  capacities: gappedCapacities,
   startsOn: _startsOn,
   endsOn: _endsOn,
 }) => {
@@ -11,10 +44,8 @@ const CapacityBar = ({
   const endsOn = DateTime.fromISO(_endsOn);
   const maxColSpans = 7;
   const daySpanInterval = Interval.fromDateTimes(startsOn, endsOn);
-  const capacities = _capacities
-    .sort((a, b) =>
-      DateTime.fromISO(a.startsOn) < DateTime.fromISO(b.startsOn) ? -1 : 1
-    )
+  const unGappedCapacities = transformGaps(gappedCapacities);
+  const capacities = unGappedCapacities
     .filter(
       (c) =>
         daySpanInterval.contains(DateTime.fromISO(c.startsOn)) &&
