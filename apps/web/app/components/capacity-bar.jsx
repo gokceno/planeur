@@ -1,5 +1,5 @@
 import { DateTime, Interval } from "luxon";
-import { useTailwindColor } from "../hooks/color.js";
+import { userColorPicker } from "../hooks/color-picker.js";
 
 const transformGaps = (capacities) => {
   if (!capacities || capacities.length < 2) {
@@ -66,7 +66,7 @@ const CapacityBar = ({
     (a, c) => a - c.span - 1,
     maxColSpans
   );
-  const { backgroundColor, textColor } = useTailwindColor(title);
+  const { backgroundColor, textColor } = userColorPicker(title);
   return (
     <div className="w-3/4 grid grid-cols-7 gap-1">
       {capacities.map(({ classNames, capacity, isGap }, i) => (

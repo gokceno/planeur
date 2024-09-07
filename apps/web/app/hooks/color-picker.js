@@ -5,7 +5,6 @@ const tailwindColors = [
   "gray",
   "zinc",
   "neutral",
-  //"stone",
   "red",
   "orange",
   "amber",
@@ -141,7 +140,7 @@ const tailwindColorRGB = {
   "lime-900": { r: 54, g: 83, b: 20 },
 };
 
-function stringToHash(str) {
+const stringToHash = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -149,18 +148,18 @@ function stringToHash(str) {
     hash |= 0; // Convert to 32bit integer
   }
   return hash;
-}
+};
 
-function getLuminance(color) {
+const getLuminance = (color) => {
   const { r, g, b } = color;
   const a = [r, g, b].map((v) => {
     v /= 255;
     return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
   });
   return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-}
+};
 
-function getRandomTailwindColorFromString(str) {
+const getRandomTailwindColorFromString = (str) => {
   const hash = stringToHash(str);
   const colorIndex = Math.abs(hash) % tailwindColors.length;
   const color = tailwindColors[colorIndex];
@@ -169,17 +168,17 @@ function getRandomTailwindColorFromString(str) {
   const shade = shades[shadeIndex];
 
   return `${color}-${shade}`;
-}
+};
 
-function getTextColor(backgroundColor) {
+const getTextColor = (backgroundColor) => {
   const rgb = tailwindColorRGB[backgroundColor];
   if (!rgb) return "text-black"; // Default to white if no mapping exists
 
   const luminance = getLuminance(rgb);
   return luminance < 0.5 ? "text-white" : "text-black";
-}
+};
 
-export function useTailwindColor(string) {
+export const userColorPicker = (string) => {
   const backgroundColor = useMemo(
     () => getRandomTailwindColorFromString(string),
     [string]
@@ -190,4 +189,4 @@ export function useTailwindColor(string) {
   );
 
   return { backgroundColor, textColor };
-}
+};
