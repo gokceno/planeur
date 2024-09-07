@@ -65,7 +65,6 @@ const CapacityBar = ({
   const endsOn = DateTime.fromISO(_endsOn);
   const daySpanInterval = Interval.fromDateTimes(startsOn, endsOn);
   const unGappedCapacities = transformGaps(gappedCapacities);
-
   const capacities = unGappedCapacities
     .filter(
       (c) =>
@@ -84,6 +83,7 @@ const CapacityBar = ({
       };
     });
   const { backgroundColor, textColor } = userColorPicker(title);
+
   return (
     <div className="w-3/4 grid grid-cols-7 gap-1">
       {capacities.map(({ classNames, capacity, isGap }, i) => (
@@ -101,6 +101,9 @@ const CapacityBar = ({
           {isGap !== true && capacity + "h/d"}
         </div>
       ))}
+      {!capacities.length && (
+        <div className="rounded bg-gray-200 col-span-7 p-5 "></div>
+      )}
     </div>
   );
 };

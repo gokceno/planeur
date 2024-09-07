@@ -25,7 +25,7 @@ export const loader = ({ request }) => {
       capacities: [
         {
           startsOn: "2024-09-06",
-          endsOn: "2024-09-06",
+          endsOn: "2024-09-07",
           capacity: 0.5,
         },
       ],
@@ -36,6 +36,11 @@ export const loader = ({ request }) => {
         {
           startsOn: "2024-09-02",
           endsOn: "2024-09-04",
+          capacity: 2,
+        },
+        {
+          startsOn: "2024-09-07",
+          endsOn: "2024-09-07",
           capacity: 2,
         },
       ],
