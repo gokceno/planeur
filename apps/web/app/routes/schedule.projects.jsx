@@ -1,10 +1,37 @@
+import { createClient } from "@libsql/client";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
+import * as schema from "../schema.js";
 
-export const loader = ({ request }) => {
+export const loader = async ({ request }) => {
+  // Set up DB
+  const libsqlClient = createClient({
+    url: "file:../../db/db.sqlite",
+  });
+  const db = drizzle(libsqlClient, { schema });
+
+  const rows = await db
+    .select()
+    .from(schema.projects)
+    .where(eq(schema.projects.id, "1"))
+    .leftJoin(
+      schema.projectsAssignments,
+      eq(schema.projects.id, schema.projectsAssignments.projectId)
+    );
+
+  /*
+  const rows = await db.query.projects.findMany({
+    with: { projectsAssignments: true },
+  });
+  */
+
+  console.log(rows);
+
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
   const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");

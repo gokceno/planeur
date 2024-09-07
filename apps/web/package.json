@@ -9,12 +9,16 @@
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/server/index.js",
-    "typecheck": "tsc"
+    "db:generate": "yarn drizzle-kit generate",
+    "db:migrate": "yarn drizzle-kit migrate"
   },
   "dependencies": {
+    "@libsql/client": "^0.10.0",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@remix-run/node": "^2.11.0",
     "@remix-run/react": "^2.11.0",
     "@remix-run/serve": "^2.11.0",
+    "drizzle-orm": "^0.33.0",
     "isbot": "4",
     "luxon": "^3.5.0",
     "react": "^18.3.1",
@@ -27,6 +31,7 @@
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "autoprefixer": "^10.4.20",
+    "drizzle-kit": "^0.24.2",
     "eslint": "^8.38.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.28.1",
