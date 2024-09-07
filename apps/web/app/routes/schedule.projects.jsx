@@ -4,8 +4,9 @@ import { DateTime } from "luxon";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 
-export const loader = () => {
-  const now = DateTime.local();
+export const loader = ({ request }) => {
+  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
   const projects = [
@@ -13,14 +14,9 @@ export const loader = () => {
       projectName: "VillaSepeti Web",
       capacities: [
         {
-          startsOn: "2024-08-31",
-          endsOn: "2024-09-05",
-          capacity: 2,
-        },
-        {
-          startsOn: "2024-09-06",
-          endsOn: "2024-09-07",
-          capacity: 4,
+          startsOn: "2024-09-05",
+          endsOn: "2024-09-06",
+          capacity: 5,
         },
       ],
     },
@@ -28,12 +24,7 @@ export const loader = () => {
       projectName: "VillaSepeti Backoffice",
       capacities: [
         {
-          startsOn: "2024-08-31",
-          endsOn: "2024-09-02",
-          capacity: 5,
-        },
-        {
-          startsOn: "2024-09-05",
+          startsOn: "2024-09-06",
           endsOn: "2024-09-06",
           capacity: 0.5,
         },
@@ -43,7 +34,7 @@ export const loader = () => {
       projectName: "VillaSepeti Mobile App",
       capacities: [
         {
-          startsOn: "2024-08-31",
+          startsOn: "2024-09-02",
           endsOn: "2024-09-04",
           capacity: 2,
         },

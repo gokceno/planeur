@@ -1,6 +1,27 @@
-import { Outlet, Link } from "@remix-run/react";
+import { Outlet, Link, useSearchParams } from "@remix-run/react";
+import { DateTime } from "luxon";
 
 const Schedule = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const gotoWeek = (direction) => {
+    const currentWeek = DateTime.local().startOf("week");
+    const activeMonday =
+      searchParams.get("w") != null
+        ? DateTime.fromISO(searchParams.get("w"))
+        : currentWeek;
+    const params = new URLSearchParams();
+    const weekOffset = {
+      previous: -1,
+      next: 1,
+      current: 0,
+    };
+    const targetDate =
+      direction === "current"
+        ? currentWeek
+        : activeMonday.plus({ weeks: weekOffset[direction] });
+    params.set("w", targetDate.toISODate());
+    setSearchParams(params);
+  };
   return (
     <div className="bg-white rounded shadow">
       <div className="flex justify-between p-4 border-b">
@@ -11,10 +32,7 @@ const Schedule = () => {
           >
             Projects
           </Link>
-          <Link
-            className={`px-4 py-2 rounded bg-gray-200`}
-            to="/schedule/team"
-          >
+          <Link className={`px-4 py-2 rounded bg-gray-200`} to="/schedule/team">
             Team
           </Link>
         </div>
@@ -41,7 +59,12 @@ const Schedule = () => {
               Quarterly
             </button>
           </div>
-          <button className="p-2 bg-white border rounded">
+          <button
+            onClick={() => {
+              gotoWeek("previous");
+            }}
+            className="p-2 bg-white border rounded"
+          >
             <svg
               className="w-5 h-5"
               fill="none"
@@ -57,10 +80,20 @@ const Schedule = () => {
               ></path>
             </svg>
           </button>
-          <button className="px-4 py-2 bg-white border rounded">
+          <button
+            onClick={() => {
+              gotoWeek("current");
+            }}
+            className="px-4 py-2 bg-white border rounded"
+          >
             This Week
           </button>
-          <button className="p-2 bg-white border rounded">
+          <button
+            onClick={() => {
+              gotoWeek("next");
+            }}
+            className="p-2 bg-white border rounded"
+          >
             <svg
               className="w-5 h-5"
               fill="none"
@@ -81,6 +114,6 @@ const Schedule = () => {
       <Outlet />
     </div>
   );
-}
+};
 
 export default Schedule;

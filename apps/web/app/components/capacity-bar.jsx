@@ -2,36 +2,57 @@ import { DateTime, Interval } from "luxon";
 import { userColorPicker } from "../hooks/color-picker.js";
 
 const transformGaps = (capacities) => {
-  if (!capacities || capacities.length < 2) {
-    return capacities; // Return original capacities if there's not enough entries
+  if (!capacities || capacities.length === 0) {
+    return capacities;
   }
-  const unGappedCapacities = [];
+  const transformedCapacities = [];
   const sortedCapacities = capacities.sort((a, b) =>
     DateTime.fromISO(a.startsOn) < DateTime.fromISO(b.startsOn) ? -1 : 1
   );
+  // Find the Monday of the week containing the first capacity
+  const firstCapacityDate = DateTime.fromISO(sortedCapacities[0].startsOn);
+  const weekStart = firstCapacityDate.startOf("week");
+  const weekEnd = weekStart.endOf("week");
+  // Check if there's a gap at the beginning of the week
+  if (weekStart < firstCapacityDate) {
+    transformedCapacities.push({
+      startsOn: weekStart.toISODate(),
+      endsOn: firstCapacityDate.minus({ days: 1 }).toISODate(),
+      capacity: 0,
+      isGap: true,
+    });
+  }
   for (let i = 0; i < sortedCapacities.length; i++) {
     const current = sortedCapacities[i];
-    unGappedCapacities.push(current);
+    transformedCapacities.push(current);
     if (i < sortedCapacities.length - 1) {
       const next = sortedCapacities[i + 1];
       const currentEndDate = DateTime.fromISO(current.endsOn);
       const nextStartDate = DateTime.fromISO(next.startsOn);
-      // Check if there's a gap
+      // Check if there's a gap between capacities
       if (currentEndDate.plus({ days: 1 }) < nextStartDate) {
-        const gapInterval = Interval.fromDateTimes(
-          currentEndDate.plus({ days: 1 }),
-          nextStartDate.minus({ days: 1 })
-        );
-        unGappedCapacities.push({
-          startsOn: gapInterval.start.toISODate(),
-          endsOn: gapInterval.end.toISODate(),
+        transformedCapacities.push({
+          startsOn: currentEndDate.plus({ days: 1 }).toISODate(),
+          endsOn: nextStartDate.minus({ days: 1 }).toISODate(),
           capacity: 0,
           isGap: true,
         });
       }
     }
   }
-  return unGappedCapacities;
+  // Check if there's a gap at the end of the week
+  const lastCapacityDate = DateTime.fromISO(
+    sortedCapacities[sortedCapacities.length - 1].endsOn
+  );
+  if (lastCapacityDate < weekEnd) {
+    transformedCapacities.push({
+      startsOn: lastCapacityDate.plus({ days: 1 }).toISODate(),
+      endsOn: weekEnd.toISODate(),
+      capacity: 0,
+      isGap: true,
+    });
+  }
+  return transformedCapacities;
 };
 
 const CapacityBar = ({
@@ -42,9 +63,9 @@ const CapacityBar = ({
 }) => {
   const startsOn = DateTime.fromISO(_startsOn);
   const endsOn = DateTime.fromISO(_endsOn);
-  const maxColSpans = 7;
   const daySpanInterval = Interval.fromDateTimes(startsOn, endsOn);
   const unGappedCapacities = transformGaps(gappedCapacities);
+
   const capacities = unGappedCapacities
     .filter(
       (c) =>
@@ -62,10 +83,6 @@ const CapacityBar = ({
         isGap: c.isGap,
       };
     });
-  const remainingSpans = capacities.reduce(
-    (a, c) => a - c.span - 1,
-    maxColSpans
-  );
   const { backgroundColor, textColor } = userColorPicker(title);
   return (
     <div className="w-3/4 grid grid-cols-7 gap-1">
@@ -84,9 +101,6 @@ const CapacityBar = ({
           {isGap !== true && capacity + "h/d"}
         </div>
       ))}
-      {remainingSpans > 0 && remainingSpans <= maxColSpans && (
-        <div className={`rounded bg-gray-200 col-span-${remainingSpans}`}></div>
-      )}
     </div>
   );
 };
