@@ -1,23 +1,25 @@
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import DateHeader from "../components/date-header.jsx";
+import { DateTime } from "luxon";
 import CapacityBar from "../components/capacity-bar.jsx";
+import DateHeader from "../components/date-header.jsx";
 
 export const loader = () => {
-  const startsOn = "2024-08-31";
-  const endsOn = "2024-09-07";
+  const now = DateTime.local();
+  const startsOn = now.startOf("week");
+  const endsOn = now.endOf("week");
   const projects = [
     {
       projectName: "VillaSepeti Web",
       capacities: [
         {
           startsOn: "2024-08-31",
-          endsOn: "2024-09-01",
+          endsOn: "2024-09-05",
           capacity: 2,
         },
         {
-          startsOn: "2024-09-03",
-          endsOn: "2024-09-05",
+          startsOn: "2024-09-06",
+          endsOn: "2024-09-07",
           capacity: 4,
         },
       ],
@@ -34,6 +36,16 @@ export const loader = () => {
           startsOn: "2024-09-05",
           endsOn: "2024-09-06",
           capacity: 0.5,
+        },
+      ],
+    },
+    {
+      projectName: "VillaSepeti Mobile App",
+      capacities: [
+        {
+          startsOn: "2024-08-31",
+          endsOn: "2024-09-04",
+          capacity: 2,
         },
       ],
     },
