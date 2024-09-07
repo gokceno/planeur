@@ -11,7 +11,14 @@ const DateHeader = ({ startsOn: _startsOn, endsOn: _endsOn }) => {
   return (
     <div className="grid grid-cols-7 mb-4 text-sm font-semibold ml-96 w-3/4">
       {spans.map((date, index) => (
-        <div key={index}>{date.toFormat("LLL dd")}</div>
+        <div
+          key={index}
+          className={`${date.weekday >= 6 ? "text-gray-400" : ""} ${
+            date.hasSame(DateTime.now(), "day") ? "underline" : ""
+          }`}
+        >
+          {date.toFormat("LLL dd")}
+        </div>
       ))}
     </div>
   );
