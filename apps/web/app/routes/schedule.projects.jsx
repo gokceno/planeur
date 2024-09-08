@@ -64,7 +64,9 @@ const transformProjects = (inputArray, limitStart, limitEnd) => {
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
+  const now = selectedWeek
+    ? DateTime.fromISO(selectedWeek)
+    : DateTime.local({ zone: "Europe/Istanbul" });
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
 
