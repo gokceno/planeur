@@ -70,7 +70,8 @@ export const loader = async ({ request }) => {
 
   // Set up DB
   const libsqlClient = createClient({
-    url: "file:../../db/db.sqlite",
+    url: process.env.TURSO_URL,
+    authToken: process.env.TURSO_TOKEN,
   });
   const db = drizzle(libsqlClient, { schema });
   const rows = await db
