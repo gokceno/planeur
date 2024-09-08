@@ -8,7 +8,8 @@ import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import * as schema from "../schema.js";
 
-const transformProjects = (inputArray) => {
+const transformProjects = (inputArray, limitStart, limitEnd) => {
+  // Group by project
   const groupedByProject = inputArray.reduce((acc, item) => {
     const projectName = item.projects.projectName;
     if (!acc[projectName]) {
@@ -17,21 +18,29 @@ const transformProjects = (inputArray) => {
     acc[projectName].push(item.projects_assignments);
     return acc;
   }, {});
+  // Transform each project
   return Object.entries(groupedByProject).map(([projectName, assignments]) => {
+    // Create a map of dates to capacities
     const capacityMap = new Map();
     assignments.forEach((assignment) => {
-      const start = DateTime.fromISO(assignment.startsOn);
-      const end = DateTime.fromISO(assignment.endsOn);
-      let current = start;
-      while (current <= end) {
-        const dateKey = current.toISODate();
-        capacityMap.set(
-          dateKey,
-          (capacityMap.get(dateKey) || 0) + assignment.capacity
-        );
-        current = current.plus({ days: 1 });
+      const assignmentStart = DateTime.fromISO(assignment.startsOn);
+      const assignmentEnd = DateTime.fromISO(assignment.endsOn);
+      // Calculate the overlap with the limit range
+      const start = assignmentStart < limitStart ? limitStart : assignmentStart;
+      const end = assignmentEnd > limitEnd ? limitEnd : assignmentEnd;
+      if (start <= end) {
+        let current = start;
+        while (current <= end) {
+          const dateKey = current.toISODate();
+          capacityMap.set(
+            dateKey,
+            (capacityMap.get(dateKey) || 0) + assignment.capacity
+          );
+          current = current.plus({ days: 1 });
+        }
       }
     });
+    // Convert the map to an array of date ranges with capacities
     const capacities = [];
     let currentRange = null;
     Array.from(capacityMap.entries())
@@ -67,13 +76,16 @@ export const loader = async ({ request }) => {
   const rows = await db
     .select()
     .from(schema.projects)
-    .where(eq(schema.projects.id, "1"))
     .leftJoin(
       schema.projectsAssignments,
       eq(schema.projects.id, schema.projectsAssignments.projectId)
     );
 
-  return json({ projects: transformProjects(rows), startsOn, endsOn });
+  return json({
+    projects: transformProjects(rows, startsOn, endsOn),
+    startsOn,
+    endsOn,
+  });
 };
 
 const Projects = () => {
