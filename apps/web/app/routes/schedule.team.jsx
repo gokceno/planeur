@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFetcher } from "@remix-run/react";
 import DateHeader from "../components/date-header.jsx";
 
 const Team = () => {
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const toggleTeamMember = (id) => {
+    const fetcher = useFetcher();
+    useEffect(() => {
+      if (fetcher.type === "init") {
+        fetcher.load("/schedule/projects/1/team/");
+      }
+      if (fetcher.type === "done") {
+        console.log("Loaded!");
+        console.log(fetcher.data);
+      }
+    }, [fetcher]);
     setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
   };
   return (
@@ -43,13 +54,17 @@ const Team = () => {
               </div>
               <div className="w-3/4 grid grid-cols-7 gap-2">
                 <div
-                  className={`col-span-4 ${index === 0 ? "bg-green-200" : "bg-green-500"} p-2 rounded ${index === 1 ? "text-white" : ""}`}
+                  className={`col-span-4 ${
+                    index === 0 ? "bg-green-200" : "bg-green-500"
+                  } p-2 rounded ${index === 1 ? "text-white" : ""}`}
                 >
                   {index === 0 ? "1 open" : "Full"}
                 </div>
                 <div className="bg-gray-200"></div>
                 <div
-                  className={`${index === 0 ? "col-span-2" : ""} ${index === 0 ? "bg-green-200" : "bg-green-500"} p-2 rounded ${index === 1 ? "text-white" : ""}`}
+                  className={`${index === 0 ? "col-span-2" : ""} ${
+                    index === 0 ? "bg-green-200" : "bg-green-500"
+                  } p-2 rounded ${index === 1 ? "text-white" : ""}`}
                 >
                   {index === 0 ? "1 open" : "Full"}
                 </div>
@@ -74,7 +89,9 @@ const Team = () => {
                     </div>
                     <div className="w-3/4 grid grid-cols-7 gap-2">
                       <div
-                        className={`col-span-${pIndex === 0 ? "4" : "7"} bg-yellow-200 p-1 rounded text-xs`}
+                        className={`col-span-${
+                          pIndex === 0 ? "4" : "7"
+                        } bg-yellow-200 p-1 rounded text-xs`}
                       >
                         {pIndex === 0
                           ? index === 0
@@ -109,6 +126,6 @@ const Team = () => {
       </div>
     </div>
   );
-}
+};
 
 export default Team;

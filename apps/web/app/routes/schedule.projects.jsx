@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
+import { useState, useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useFetcher } from "@remix-run/react";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { DateTime, Interval } from "luxon";
@@ -12,54 +13,58 @@ const transformProjects = (inputArray, limitStart, limitEnd) => {
   // Group by project
   const groupedByProject = inputArray.reduce((acc, item) => {
     const projectName = item.projects.projectName;
+    const projectId = item.projects.id;
     if (!acc[projectName]) {
-      acc[projectName] = [];
+      acc[projectName] = { id: projectId, assignments: [] };
     }
-    acc[projectName].push(item.projects_assignments);
+    acc[projectName].assignments.push(item.projects_assignments);
     return acc;
   }, {});
   // Transform each project
-  return Object.entries(groupedByProject).map(([projectName, assignments]) => {
-    // Create a map of dates to capacities
-    const capacityMap = new Map();
-    assignments.forEach((assignment) => {
-      const assignmentStart = DateTime.fromISO(assignment.startsOn);
-      const assignmentEnd = DateTime.fromISO(assignment.endsOn);
-      // Calculate the overlap with the limit range
-      const start = assignmentStart < limitStart ? limitStart : assignmentStart;
-      const end = assignmentEnd > limitEnd ? limitEnd : assignmentEnd;
-      if (start <= end) {
-        let current = start;
-        while (current <= end) {
-          const dateKey = current.toISODate();
-          capacityMap.set(
-            dateKey,
-            (capacityMap.get(dateKey) || 0) + assignment.capacity
-          );
-          current = current.plus({ days: 1 });
-        }
-      }
-    });
-    // Convert the map to an array of date ranges with capacities
-    const capacities = [];
-    let currentRange = null;
-    Array.from(capacityMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([date, capacity]) => {
-        if (!currentRange || currentRange.capacity !== capacity) {
-          if (currentRange) {
-            capacities.push(currentRange);
+  return Object.entries(groupedByProject).map(
+    ([projectName, { id, assignments }]) => {
+      // Create a map of dates to capacities
+      const capacityMap = new Map();
+      assignments.forEach((assignment) => {
+        const assignmentStart = DateTime.fromISO(assignment.startsOn);
+        const assignmentEnd = DateTime.fromISO(assignment.endsOn);
+        // Calculate the overlap with the limit range
+        const start =
+          assignmentStart < limitStart ? limitStart : assignmentStart;
+        const end = assignmentEnd > limitEnd ? limitEnd : assignmentEnd;
+        if (start <= end) {
+          let current = start;
+          while (current <= end) {
+            const dateKey = current.toISODate();
+            capacityMap.set(
+              dateKey,
+              (capacityMap.get(dateKey) || 0) + assignment.capacity
+            );
+            current = current.plus({ days: 1 });
           }
-          currentRange = { startsOn: date, endsOn: date, capacity };
-        } else {
-          currentRange.endsOn = date;
         }
       });
-    if (currentRange) {
-      capacities.push(currentRange);
+      // Convert the map to an array of date ranges with capacities
+      const capacities = [];
+      let currentRange = null;
+      Array.from(capacityMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([date, capacity]) => {
+          if (!currentRange || currentRange.capacity !== capacity) {
+            if (currentRange) {
+              capacities.push(currentRange);
+            }
+            currentRange = { startsOn: date, endsOn: date, capacity };
+          } else {
+            currentRange.endsOn = date;
+          }
+        });
+      if (currentRange) {
+        capacities.push(currentRange);
+      }
+      return { projectName, id, capacities };
     }
-    return { projectName, capacities };
-  });
+  );
 };
 
 export const loader = async ({ request }) => {
@@ -93,14 +98,25 @@ export const loader = async ({ request }) => {
 
 const Projects = () => {
   const { projects, startsOn, endsOn } = useLoaderData();
+  const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
+  const fetcher = useFetcher();
+  const toggleTeamMember = (id) => {
+    setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
+    if (!expandedTeamMembers[id]) {
+      fetcher.load(`/schedule/projects/${id}/team/`);
+    }
+  };
   return (
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {projects.map(({ projectName, capacities }, i) => (
+        {projects.map(({ projectName, capacities, id }, i) => (
           <div key={i}>
-            <div className="flex items-center cursor-pointer">
-              <div className="w-1/4 pr-4">
+            <div className="flex items-center">
+              <button
+                className="w-1/4 pr-4 cursor-pointer"
+                onClick={() => toggleTeamMember(id)}
+              >
                 <div className="flex items-center">
                   <svg
                     className="w-4 h-4 mr-2"
@@ -118,7 +134,7 @@ const Projects = () => {
                   </svg>
                   <div className="font-semibold">{projectName}</div>
                 </div>
-              </div>
+              </button>
               <CapacityBar
                 title={projectName}
                 startsOn={startsOn}
@@ -126,6 +142,34 @@ const Projects = () => {
                 capacities={capacities}
               />
             </div>
+            {expandedTeamMembers[id] && (
+              <div className="mt-2 space-y-2">
+                {fetcher.data &&
+                  fetcher.data.map((project, i) => (
+                    <div key={i} className="flex items-center">
+                      <div className="w-1/4 pr-4 flex items-center">
+                        <div className="text-sm ml-6">{project}</div>
+                      </div>
+                      <div className="w-3/4 grid grid-cols-7 gap-2">
+                        <div
+                          className={`col-span-4 bg-yellow-200 p-1 rounded text-xs`}
+                        >
+                          4 h/d
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                <div className="flex items-center mt-2">
+                  <div className="w-1/4 pr-4">
+                    <select className="w-3/4 p-2 border rounded text-sm ml-6">
+                      <option value="">Add person...</option>
+                      <option value="charlie">Erman Milli</option>
+                      <option value="diana">İhsan Kaşkay</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
