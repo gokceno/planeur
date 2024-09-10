@@ -19,9 +19,23 @@ export const projectsAssignments = sqliteTable("projects_assignments", {
     .notNull()
     .$defaultFn(() => createId()),
   projectId: text("project_id").references(() => projects.id),
-  startsOn: text("starts_on"),
-  endsOn: text("ends_on"),
-  capacity: integer("capacity", { mode: "number" }),
+  peopleId: text("people_id").references(() => people.id),
+  startsOn: text("starts_on").notNull(),
+  endsOn: text("ends_on").notNull(),
+  capacity: integer("capacity", { mode: "number" }).notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const people = sqliteTable("people", {
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .$defaultFn(() => createId()),
+  email: text("email").notNull(),
+  firstname: text("firstname").notNull(),
+  lastname: text("lastname").notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
