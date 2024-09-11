@@ -1,10 +1,10 @@
 import { createClient } from "@libsql/client";
-import { useState, useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData, useFetcher } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
-import { DateTime, Interval } from "luxon";
+import { DateTime } from "luxon";
+import { useState } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import * as schema from "../schema.js";
@@ -75,7 +75,6 @@ export const loader = async ({ request }) => {
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
 
-  // Set up DB
   const libsqlClient = createClient({
     url: process.env.TURSO_URL,
     authToken: process.env.TURSO_TOKEN,
@@ -93,17 +92,18 @@ export const loader = async ({ request }) => {
     projects: transformProjects(rows, startsOn, endsOn),
     startsOn,
     endsOn,
+    selectedWeek,
   });
 };
 
 const Projects = () => {
-  const { projects, startsOn, endsOn } = useLoaderData();
+  const { projects, startsOn, endsOn, selectedWeek } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
   const toggleTeamMember = (id) => {
     setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
     if (!expandedTeamMembers[id]) {
-      fetcher.load(`/schedule/projects/${id}/team/`);
+      fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
     }
   };
   return (
@@ -140,25 +140,30 @@ const Projects = () => {
                 startsOn={startsOn}
                 endsOn={endsOn}
                 capacities={capacities}
+                style="large"
               />
             </div>
             {expandedTeamMembers[id] && (
               <div className="mt-2 space-y-2">
                 {fetcher.data &&
-                  fetcher.data.map((project, i) => (
-                    <div key={i} className="flex items-center">
-                      <div className="w-1/4 pr-4 flex items-center">
-                        <div className="text-sm ml-6">{project}</div>
-                      </div>
-                      <div className="w-3/4 grid grid-cols-7 gap-2">
-                        <div
-                          className={`col-span-4 bg-yellow-200 p-1 rounded text-xs`}
-                        >
-                          4 h/d
+                  fetcher.data.map(
+                    ({ firstname, lastname, assignments }, i) => (
+                      <div key={i} className="flex items-center">
+                        <div className="w-1/4 pr-4 flex items-center">
+                          <div className="text-sm ml-6">
+                            {firstname} {lastname}
+                          </div>
                         </div>
+                        <CapacityBar
+                          title={`${firstname} ${lastname}`}
+                          startsOn={startsOn}
+                          endsOn={endsOn}
+                          capacities={assignments}
+                          style="small"
+                        />
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 <div className="flex items-center mt-2">
                   <div className="w-1/4 pr-4">
                     <select className="w-3/4 p-2 border rounded text-sm ml-6">

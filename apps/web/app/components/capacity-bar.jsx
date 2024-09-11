@@ -60,6 +60,7 @@ const CapacityBar = ({
   capacities: gappedCapacities,
   startsOn: _startsOn,
   endsOn: _endsOn,
+  style = "large", // small
 }) => {
   const startsOn = DateTime.fromISO(_startsOn);
   const endsOn = DateTime.fromISO(_endsOn);
@@ -91,7 +92,8 @@ const CapacityBar = ({
           key={i}
           className={[
             textColor,
-            "p-2",
+            style === "small" ? "p-1" : "p-2",
+            style === "small" ? "text-xs" : "text-base",
             "rounded",
             isGap ? "bg-gray-200" : "bg-" + backgroundColor,
           ]
@@ -102,7 +104,11 @@ const CapacityBar = ({
         </div>
       ))}
       {!capacities.length && (
-        <div className="rounded bg-gray-200 col-span-7 p-5 "></div>
+        <div
+          className={`rounded bg-gray-200 col-span-7 ${
+            style === "small" ? "p-3" : "p-5"
+          }`}
+        ></div>
       )}
     </div>
   );
