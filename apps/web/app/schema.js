@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const projects = sqliteTable("projects", {
@@ -40,3 +40,25 @@ export const people = sqliteTable("people", {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const peopleRelations = relations(people, ({ many }) => ({
+  assignments: many(projectsAssignments),
+}));
+
+export const projectRelations = relations(projects, ({ many }) => ({
+  assignments: many(projectsAssignments),
+}));
+
+export const projectsAssignmentsRelations = relations(
+  projectsAssignments,
+  ({ one }) => ({
+    project: one(projects, {
+      fields: [projectsAssignments.projectId],
+      references: [projects.id],
+    }),
+    person: one(people, {
+      fields: [projectsAssignments.peopleId],
+      references: [people.id],
+    }),
+  })
+);
