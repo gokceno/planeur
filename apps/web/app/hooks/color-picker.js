@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 
 const tailwindColors = [
-  "zinc",
-  "neutral",
   "red",
   "orange",
   "amber",
@@ -41,16 +39,6 @@ const tailwindColorRGB = {
   "yellow-700": { r: 161, g: 98, b: 7 },
   "yellow-800": { r: 133, g: 77, b: 14 },
   "yellow-900": { r: 113, g: 63, b: 18 },
-  "zinc-500": { r: 113, g: 113, b: 122 },
-  "zinc-600": { r: 82, g: 82, b: 91 },
-  "zinc-700": { r: 63, g: 63, b: 70 },
-  "zinc-800": { r: 39, g: 39, b: 42 },
-  "zinc-900": { r: 24, g: 24, b: 27 },
-  "neutral-500": { r: 115, g: 115, b: 115 },
-  "neutral-600": { r: 82, g: 82, b: 82 },
-  "neutral-700": { r: 64, g: 64, b: 64 },
-  "neutral-800": { r: 38, g: 38, b: 38 },
-  "neutral-900": { r: 23, g: 23, b: 23 },
   "green-500": { r: 34, g: 197, b: 94 },
   "green-600": { r: 22, g: 163, b: 74 },
   "green-700": { r: 21, g: 128, b: 61 },
