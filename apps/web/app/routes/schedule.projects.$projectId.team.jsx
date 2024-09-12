@@ -4,7 +4,6 @@ import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
 import * as schema from "../schema.js";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
-import People from "./schedule.team.jsx";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");

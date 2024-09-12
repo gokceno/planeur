@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useMatches,
 } from "@remix-run/react";
 import stylesheet from "./tailwind.css?url";
 
@@ -40,13 +41,25 @@ export default function App() {
           <h1 className="text-2xl font-bold text-white">Planeur</h1>
           <Link
             to="/schedule/"
-            className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-600"
+            className={`px-4 py-2 text-white rounded hover:bg-blue-600 ${
+              useMatches().some((match) =>
+                match.pathname.startsWith("/schedule/")
+              )
+                ? "bg-blue-700"
+                : ""
+            } `}
           >
             Schedule
           </Link>
           <Link
             to="/manage/"
-            className="px-4 py-2 text-white hover:bg-blue-700"
+            className={`px-4 py-2 text-white rounded hover:bg-blue-600 ${
+              useMatches().some((match) =>
+                match.pathname.startsWith("/manage/")
+              )
+                ? "bg-blue-700"
+                : ""
+            } `}
           >
             Manage
           </Link>

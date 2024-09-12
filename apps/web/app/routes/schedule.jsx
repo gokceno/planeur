@@ -1,4 +1,4 @@
-import { Outlet, Link, useSearchParams } from "@remix-run/react";
+import { Outlet, Link, useSearchParams, useMatches } from "@remix-run/react";
 import { DateTime } from "luxon";
 
 const Schedule = () => {
@@ -27,12 +27,25 @@ const Schedule = () => {
       <div className="flex justify-between p-4 border-b">
         <div className="flex space-x-2">
           <Link
-            className={`px-4 py-2 rounded bg-white border`}
+            className={`px-4 py-2 rounded ${
+              useMatches().some(
+                (match) => match.pathname === "/schedule/projects/"
+              )
+                ? "bg-gray-200"
+                : "bg-white border"
+            }`}
             to="/schedule/projects/"
           >
             Projects
           </Link>
-          <Link className={`px-4 py-2 rounded bg-gray-200`} to="/schedule/team">
+          <Link
+            className={`px-4 py-2 rounded ${
+              useMatches().some((match) => match.pathname === "/schedule/team")
+                ? "bg-gray-200"
+                : "bg-white border"
+            }`}
+            to="/schedule/team"
+          >
             Team
           </Link>
         </div>
