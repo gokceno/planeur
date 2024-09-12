@@ -18,17 +18,24 @@ export const loader = async ({ request }) => {
   const db = drizzle(libsqlClient, { schema });
   const assignments = await db.query.people.findMany({
     with: {
-      assignments: {
-        where: (assignments, { and, gte, lte }) =>
-          and(
-            gte(assignments.startsOn, startsOn.toISO().split("T")[0]),
-            lte(assignments.endsOn, endsOn.toISO().split("T")[0])
-          ),
-      },
+      assignments: true,
     },
   });
 
-  console.log(startsOn, endsOn);
+  const transformedAssignments = assignments.map((person) => ({
+    ...person,
+    assignments: person.assignments.map((assignment) => ({
+      ...assignment,
+      startsOn:
+        DateTime.fromISO(assignment.startsOn) < startsOn
+          ? startsOn.toISODate()
+          : assignment.startsOn,
+      endsOn:
+        DateTime.fromISO(assignment.endsOn) > endsOn
+          ? endsOn.toISODate()
+          : assignment.endsOn,
+    })),
+  }));
 
-  return json(assignments);
+  return json(transformedAssignments);
 };

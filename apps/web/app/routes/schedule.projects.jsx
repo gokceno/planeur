@@ -1,10 +1,10 @@
 import { createClient } from "@libsql/client";
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import * as schema from "../schema.js";
@@ -69,9 +69,7 @@ const transformProjects = (inputArray, limitStart, limitEnd) => {
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek
-    ? DateTime.fromISO(selectedWeek)
-    : DateTime.local({ zone: "Europe/Istanbul" });
+  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
 
@@ -92,20 +90,33 @@ export const loader = async ({ request }) => {
     projects: transformProjects(rows, startsOn, endsOn),
     startsOn,
     endsOn,
-    selectedWeek,
   });
 };
 
 const Projects = () => {
-  const { projects, startsOn, endsOn, selectedWeek } = useLoaderData();
+  const { projects, startsOn, endsOn } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
+
+  const [searchParams] = useSearchParams();
+
+  const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
+
+  useEffect(() => {
+    Object.keys(expandedTeamMembers).forEach((id) => {
+      if (expandedTeamMembers[id]) {
+        fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
+      }
+    });
+  }, [selectedWeek]);
+
   const toggleTeamMember = (id) => {
     setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
     if (!expandedTeamMembers[id]) {
       fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
     }
   };
+
   return (
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
