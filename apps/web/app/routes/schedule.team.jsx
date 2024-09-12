@@ -1,12 +1,10 @@
-import { createClient } from "@libsql/client";
+import { db } from "../utils/db.js";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
-import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
 import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
-import * as schema from "../schema.js";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
 
 export const loader = async ({ request }) => {
@@ -14,13 +12,6 @@ export const loader = async ({ request }) => {
   const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
-
-  const libsqlClient = createClient({
-    url: process.env.TURSO_URL,
-    authToken: process.env.TURSO_TOKEN,
-  });
-  const db = drizzle(libsqlClient, { schema });
-
   const people = await db.query.people.findMany({
     with: {
       assignments: true,

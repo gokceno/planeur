@@ -1,26 +1,19 @@
-import { createClient } from "@libsql/client";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
 import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import * as schema from "../schema.js";
 import { transformProjects } from "../utils/transformers.js";
+import { db } from "../utils/db.js";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
   const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
-
-  const libsqlClient = createClient({
-    url: process.env.TURSO_URL,
-    authToken: process.env.TURSO_TOKEN,
-  });
-  const db = drizzle(libsqlClient, { schema });
   const rows = await db
     .select()
     .from(schema.projects)

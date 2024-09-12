@@ -1,9 +1,7 @@
-import { createClient } from "@libsql/client";
 import { json } from "@remix-run/node";
-import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
-import * as schema from "../schema.js";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
+import { db } from "../utils/db.js";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -12,11 +10,6 @@ export const loader = async ({ request }) => {
     : DateTime.local({ zone: "Europe/Istanbul" });
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
-  const libsqlClient = createClient({
-    url: process.env.TURSO_URL,
-    authToken: process.env.TURSO_TOKEN,
-  });
-  const db = drizzle(libsqlClient, { schema });
   const people = await db.query.people.findMany({
     with: {
       assignments: true,
