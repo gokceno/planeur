@@ -3,6 +3,8 @@ import { json } from "@remix-run/node";
 import { drizzle } from "drizzle-orm/libsql";
 import { DateTime } from "luxon";
 import * as schema from "../schema.js";
+import { transformPeopleWithAssignments } from "../utils/transformers.js";
+import People from "./schedule.team.jsx";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -16,26 +18,10 @@ export const loader = async ({ request }) => {
     authToken: process.env.TURSO_TOKEN,
   });
   const db = drizzle(libsqlClient, { schema });
-  const assignments = await db.query.people.findMany({
+  const people = await db.query.people.findMany({
     with: {
       assignments: true,
     },
   });
-
-  const transformedAssignments = assignments.map((person) => ({
-    ...person,
-    assignments: person.assignments.map((assignment) => ({
-      ...assignment,
-      startsOn:
-        DateTime.fromISO(assignment.startsOn) < startsOn
-          ? startsOn.toISODate()
-          : assignment.startsOn,
-      endsOn:
-        DateTime.fromISO(assignment.endsOn) > endsOn
-          ? endsOn.toISODate()
-          : assignment.endsOn,
-    })),
-  }));
-
-  return json(transformedAssignments);
+  return json(transformPeopleWithAssignments(people, startsOn, endsOn));
 };

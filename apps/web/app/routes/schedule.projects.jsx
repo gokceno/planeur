@@ -8,64 +8,7 @@ import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import * as schema from "../schema.js";
-
-const transformProjects = (inputArray, limitStart, limitEnd) => {
-  // Group by project
-  const groupedByProject = inputArray.reduce((acc, item) => {
-    const projectName = item.projects.projectName;
-    const projectId = item.projects.id;
-    if (!acc[projectName]) {
-      acc[projectName] = { id: projectId, assignments: [] };
-    }
-    acc[projectName].assignments.push(item.projects_assignments);
-    return acc;
-  }, {});
-  // Transform each project
-  return Object.entries(groupedByProject).map(
-    ([projectName, { id, assignments }]) => {
-      // Create a map of dates to capacities
-      const capacityMap = new Map();
-      assignments.forEach((assignment) => {
-        const assignmentStart = DateTime.fromISO(assignment.startsOn);
-        const assignmentEnd = DateTime.fromISO(assignment.endsOn);
-        // Calculate the overlap with the limit range
-        const start =
-          assignmentStart < limitStart ? limitStart : assignmentStart;
-        const end = assignmentEnd > limitEnd ? limitEnd : assignmentEnd;
-        if (start <= end) {
-          let current = start;
-          while (current <= end) {
-            const dateKey = current.toISODate();
-            capacityMap.set(
-              dateKey,
-              (capacityMap.get(dateKey) || 0) + assignment.capacity
-            );
-            current = current.plus({ days: 1 });
-          }
-        }
-      });
-      // Convert the map to an array of date ranges with capacities
-      const capacities = [];
-      let currentRange = null;
-      Array.from(capacityMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .forEach(([date, capacity]) => {
-          if (!currentRange || currentRange.capacity !== capacity) {
-            if (currentRange) {
-              capacities.push(currentRange);
-            }
-            currentRange = { startsOn: date, endsOn: date, capacity };
-          } else {
-            currentRange.endsOn = date;
-          }
-        });
-      if (currentRange) {
-        capacities.push(currentRange);
-      }
-      return { projectName, id, capacities };
-    }
-  );
-};
+import { transformProjects } from "../utils/transformers.js";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");

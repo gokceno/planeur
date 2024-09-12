@@ -100,7 +100,7 @@ const CapacityBar = ({
             .concat(classNames)
             .join(" ")}
         >
-          {isGap !== true && capacity + "h/d"}
+          {isGap !== true && capacity + " h/d"}
         </div>
       ))}
       {!capacities.length && (

@@ -1,33 +1,74 @@
+import { createClient } from "@libsql/client";
+import { json } from "@remix-run/node";
+import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
+import { drizzle } from "drizzle-orm/libsql";
+import { DateTime } from "luxon";
 import { useState, useEffect } from "react";
-import { useFetcher } from "@remix-run/react";
+import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
+import * as schema from "../schema.js";
+import { transformPeopleWithAssignments } from "../utils/transformers.js";
 
-const Team = () => {
-  const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
+export const loader = async ({ request }) => {
+  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
+  const startsOn = now.startOf("week");
+  const endsOn = now.endOf("week");
+
+  const libsqlClient = createClient({
+    url: process.env.TURSO_URL,
+    authToken: process.env.TURSO_TOKEN,
+  });
+  const db = drizzle(libsqlClient, { schema });
+
+  const people = await db.query.people.findMany({
+    with: {
+      assignments: true,
+    },
+  });
+
+  return json({
+    people: transformPeopleWithAssignments(people, startsOn, endsOn),
+    startsOn,
+    endsOn,
+  });
+};
+
+const People = () => {
+  const { people, startsOn, endsOn } = useLoaderData();
+  // const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
+  const fetcher = useFetcher();
+
+  const [searchParams] = useSearchParams();
+
+  const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
+
+  // useEffect(() => {
+  //   Object.keys(expandedTeamMembers).forEach((id) => {
+  //     if (expandedTeamMembers[id]) {
+  //       fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
+  //     }
+  //   });
+  // }, [selectedWeek]);
+
   const toggleTeamMember = (id) => {
-    const fetcher = useFetcher();
-    useEffect(() => {
-      if (fetcher.type === "init") {
-        fetcher.load("/schedule/projects/1/team/");
-      }
-      if (fetcher.type === "done") {
-        console.log("Loaded!");
-        console.log(fetcher.data);
-      }
-    }, [fetcher]);
     setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
+    if (!expandedTeamMembers[id]) {
+      fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
+    }
   };
+
   return (
     <div className="p-4">
-      <DateHeader />
+      <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {["Alanna Rowan", "Arun Srinivasan"].map((member, index) => (
-          <div key={index}>
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() => toggleTeamMember(member)}
-            >
-              <div className="w-1/4 pr-4">
+        {people.map(({ firstname, lastname, assignments }, i) => (
+          <div key={i}>
+            <div className="flex items-center">
+              <button
+                className="w-1/4 pr-4 cursor-pointer"
+                onClick={() => toggleTeamMember(id)}
+              >
                 <div className="flex items-center">
                   <svg
                     className="w-4 h-4 mr-2"
@@ -43,84 +84,19 @@ const Team = () => {
                       d="M9 5l7 7-7 7"
                     ></path>
                   </svg>
-                  <div className="w-8 h-8 bg-gray-300 rounded-full mr-2"></div>
-                  <div>
-                    <div className="font-semibold">{member}</div>
-                    <div className="text-sm text-gray-500">
-                      {index === 0 ? "Support, Team Lead" : "Development Lead"}
-                    </div>
+                  <div className="font-semibold">
+                    {firstname} {lastname}
                   </div>
                 </div>
-              </div>
-              <div className="w-3/4 grid grid-cols-7 gap-2">
-                <div
-                  className={`col-span-4 ${
-                    index === 0 ? "bg-green-200" : "bg-green-500"
-                  } p-2 rounded ${index === 1 ? "text-white" : ""}`}
-                >
-                  {index === 0 ? "1 open" : "Full"}
-                </div>
-                <div className="bg-gray-200"></div>
-                <div
-                  className={`${index === 0 ? "col-span-2" : ""} ${
-                    index === 0 ? "bg-green-200" : "bg-green-500"
-                  } p-2 rounded ${index === 1 ? "text-white" : ""}`}
-                >
-                  {index === 0 ? "1 open" : "Full"}
-                </div>
-                {index === 1 && (
-                  <div className="bg-red-500 p-2 rounded text-white">
-                    4 over
-                  </div>
-                )}
-              </div>
+              </button>
+              <CapacityBar
+                title={`${firstname} ${lastname}`}
+                startsOn={startsOn}
+                endsOn={endsOn}
+                capacities={assignments}
+                style="large"
+              />
             </div>
-            {expandedTeamMembers[member] && (
-              <div className="mt-2 space-y-2">
-                {[
-                  "Barrington Publishers Spring Issue",
-                  index === 0
-                    ? "Customer Support Improvement"
-                    : "New Feature Development",
-                ].map((project, pIndex) => (
-                  <div key={pIndex} className="flex items-center">
-                    <div className="w-1/4 pr-4 flex items-center">
-                      <div className="text-sm ml-6">{project}</div>
-                    </div>
-                    <div className="w-3/4 grid grid-cols-7 gap-2">
-                      <div
-                        className={`col-span-${
-                          pIndex === 0 ? "4" : "7"
-                        } bg-yellow-200 p-1 rounded text-xs`}
-                      >
-                        {pIndex === 0
-                          ? index === 0
-                            ? "2 h/d"
-                            : "6 h/d"
-                          : "4 h/d"}
-                      </div>
-                      {pIndex === 0 && (
-                        <div className="col-span-3 bg-gray-200"></div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center mt-2">
-                  <div className="w-1/4 pr-4">
-                    <select
-                      className="w-3/4 p-2 border rounded text-sm ml-6"
-                      onChange={(e) =>
-                        addTeamMember("barrington-project", e.target.value)
-                      }
-                    >
-                      <option value="">Add project...</option>
-                      <option value="charlie">Charlie Davis</option>
-                      <option value="diana">Diana Edwards</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -128,4 +104,4 @@ const Team = () => {
   );
 };
 
-export default Team;
+export default People;
