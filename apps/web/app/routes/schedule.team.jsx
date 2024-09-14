@@ -2,7 +2,7 @@ import { db } from "../utils/db.js";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { DateTime } from "luxon";
-// import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
@@ -29,25 +29,25 @@ export const loader = async ({ request }) => {
 
 const People = () => {
   const { people, startsOn, endsOn } = useLoaderData();
-  // const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
+  const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
 
   const [searchParams] = useSearchParams();
 
   const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
 
-  // useEffect(() => {
-  //   Object.keys(expandedTeamMembers).forEach((id) => {
-  //     if (expandedTeamMembers[id]) {
-  //       fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
-  //     }
-  //   });
-  // }, [selectedWeek]);
+  useEffect(() => {
+    Object.keys(expandedTeamMembers).forEach((id) => {
+      if (expandedTeamMembers[id]) {
+        fetcher.load(`/schedule/team/${id}/projects/?w=${selectedWeek}`);
+      }
+    });
+  }, [selectedWeek]);
 
   const toggleTeamMember = (id) => {
-    setExpandedTeamMembers((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpandedTeamMembers((prev) => ({ [id]: !prev[id] }));
     if (!expandedTeamMembers[id]) {
-      fetcher.load(`/schedule/projects/${id}/team/?w=${selectedWeek}`);
+      fetcher.load(`/schedule/team/${id}/projects/?w=${selectedWeek}`);
     }
   };
 
@@ -55,7 +55,7 @@ const People = () => {
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {people.map(({ firstname, lastname, capacities }, i) => (
+        {people.map(({ id, firstname, lastname, capacities }, i) => (
           <div key={i}>
             <div className="flex items-center">
               <button
@@ -90,6 +90,34 @@ const People = () => {
                 style="large"
               />
             </div>
+            {expandedTeamMembers[id] === true && (
+              <div className="mt-2 space-y-2">
+                {fetcher.data &&
+                  fetcher.data.map(({ projectName, capacities }, i) => (
+                    <div key={i} className="flex items-center">
+                      <div className="w-1/4 pr-4 flex items-center">
+                        <div className="text-sm ml-6">{projectName}</div>
+                      </div>
+                      <CapacityBar
+                        title={`${projectName}`}
+                        startsOn={startsOn}
+                        endsOn={endsOn}
+                        capacities={capacities}
+                        style="small"
+                      />
+                    </div>
+                  ))}
+                <div className="flex items-center mt-2">
+                  <div className="w-1/4 pr-4">
+                    <select className="w-3/4 p-2 border rounded text-sm ml-6">
+                      <option value="">Add person...</option>
+                      <option value="charlie">Erman Milli</option>
+                      <option value="diana">İhsan Kaşkay</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
