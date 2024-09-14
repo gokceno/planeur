@@ -2,7 +2,7 @@ import { db } from "../utils/db.js";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { DateTime } from "luxon";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
@@ -14,7 +14,9 @@ export const loader = async ({ request }) => {
   const endsOn = now.endOf("week");
   const people = await db.query.people.findMany({
     with: {
-      assignments: true,
+      projects: {
+        with: { assignments: true },
+      },
     },
   });
 
@@ -53,7 +55,7 @@ const People = () => {
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {people.map(({ firstname, lastname, assignments }, i) => (
+        {people.map(({ firstname, lastname, capacities }, i) => (
           <div key={i}>
             <div className="flex items-center">
               <button
@@ -84,7 +86,7 @@ const People = () => {
                 title={`${firstname} ${lastname}`}
                 startsOn={startsOn}
                 endsOn={endsOn}
-                capacities={assignments}
+                capacities={capacities}
                 style="large"
               />
             </div>

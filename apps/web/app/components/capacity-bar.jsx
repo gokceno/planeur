@@ -12,7 +12,7 @@ const CapacityBar = ({
   const startsOn = DateTime.fromISO(_startsOn);
   const endsOn = DateTime.fromISO(_endsOn);
   const daySpanInterval = Interval.fromDateTimes(startsOn, endsOn);
-  const unGappedCapacities = transformGaps(gappedCapacities);
+  const unGappedCapacities = transformGaps(gappedCapacities ?? []);
   const capacities = unGappedCapacities
     .filter(
       (c) =>

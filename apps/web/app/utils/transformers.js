@@ -1,39 +1,55 @@
 import { DateTime } from "luxon";
 
 export const transformPeopleWithAssignments = (people, startsOn, endsOn) => {
-  return people.map((person) => ({
-    ...person,
-    assignments: person.assignments.map((assignment) => ({
-      ...assignment,
-      startsOn:
-        DateTime.fromISO(assignment.startsOn) < startsOn
-          ? startsOn.toISODate()
-          : assignment.startsOn,
-      endsOn:
-        DateTime.fromISO(assignment.endsOn) > endsOn
-          ? endsOn.toISODate()
-          : assignment.endsOn,
-    })),
-  }));
+  return people.map((person) => {
+    const capacityMap = new Map();
+    person.projects.forEach((project) => {
+      project.assignments.forEach((assignment) => {
+        const assignmentStart = DateTime.fromISO(assignment.startsOn);
+        const assignmentEnd = DateTime.fromISO(assignment.endsOn);
+        // Calculate the overlap with the limit range
+        const start = assignmentStart < startsOn ? startsOn : assignmentStart;
+        const end = assignmentEnd > endsOn ? endsOn : assignmentEnd;
+        if (start <= end) {
+          let current = start;
+          while (current <= end) {
+            const dateKey = current.toISODate();
+            capacityMap.set(
+              dateKey,
+              (capacityMap.get(dateKey) || 0) + assignment.capacity
+            );
+            current = current.plus({ days: 1 });
+          }
+        }
+      });
+    });
+    // Convert the map to an array of date ranges with capacities
+    const capacities = [];
+    let currentRange = null;
+    Array.from(capacityMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([date, capacity]) => {
+        if (!currentRange || currentRange.capacity !== capacity) {
+          if (currentRange) {
+            capacities.push(currentRange);
+          }
+          currentRange = { startsOn: date, endsOn: date, capacity };
+        } else {
+          currentRange.endsOn = date;
+        }
+      });
+    if (currentRange) {
+      capacities.push(currentRange);
+    }
+    return { ...person, capacities };
+  });
 };
 
 export const transformProjects = (inputArray, limitStart, limitEnd) => {
-  // Group by project
-  const groupedByProject = inputArray.reduce((acc, item) => {
-    const projectName = item.projects.projectName;
-    const projectId = item.projects.id;
-    if (!acc[projectName]) {
-      acc[projectName] = { id: projectId, assignments: [] };
-    }
-    acc[projectName].assignments.push(item.projects_assignments);
-    return acc;
-  }, {});
-  // Transform each project
-  return Object.entries(groupedByProject).map(
-    ([projectName, { id, assignments }]) => {
-      // Create a map of dates to capacities
-      const capacityMap = new Map();
-      assignments.forEach((assignment) => {
+  return inputArray.map((project) => {
+    const capacityMap = new Map();
+    project.people.forEach((person) => {
+      person.assignments.forEach((assignment) => {
         const assignmentStart = DateTime.fromISO(assignment.startsOn);
         const assignmentEnd = DateTime.fromISO(assignment.endsOn);
         // Calculate the overlap with the limit range
@@ -52,27 +68,27 @@ export const transformProjects = (inputArray, limitStart, limitEnd) => {
           }
         }
       });
-      // Convert the map to an array of date ranges with capacities
-      const capacities = [];
-      let currentRange = null;
-      Array.from(capacityMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .forEach(([date, capacity]) => {
-          if (!currentRange || currentRange.capacity !== capacity) {
-            if (currentRange) {
-              capacities.push(currentRange);
-            }
-            currentRange = { startsOn: date, endsOn: date, capacity };
-          } else {
-            currentRange.endsOn = date;
+    });
+    // Convert the map to an array of date ranges with capacities
+    const capacities = [];
+    let currentRange = null;
+    Array.from(capacityMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([date, capacity]) => {
+        if (!currentRange || currentRange.capacity !== capacity) {
+          if (currentRange) {
+            capacities.push(currentRange);
           }
-        });
-      if (currentRange) {
-        capacities.push(currentRange);
-      }
-      return { projectName, id, capacities };
+          currentRange = { startsOn: date, endsOn: date, capacity };
+        } else {
+          currentRange.endsOn = date;
+        }
+      });
+    if (currentRange) {
+      capacities.push(currentRange);
     }
-  );
+    return { projectName: project.projectName, id: project.id, capacities };
+  });
 };
 
 export const transformGaps = (capacities) => {

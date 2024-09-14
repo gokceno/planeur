@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "59300f35-12c4-44f0-9b16-35d5e2266eea",
+  "id": "284193bf-8ccc-4ccb-b61b-a81fce1cd219",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "people": {
@@ -31,6 +31,13 @@
         "lastname": {
           "name": "lastname",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "capacity": {
+          "name": "capacity",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -90,15 +97,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "people_id": {
-          "name": "people_id",
+        "projects_people_id": {
+          "name": "projects_people_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -136,9 +136,61 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "projects_assignments_project_id_projects_id_fk": {
-          "name": "projects_assignments_project_id_projects_id_fk",
+        "projects_assignments_projects_people_id_projects_people_id_fk": {
+          "name": "projects_assignments_projects_people_id_projects_people_id_fk",
           "tableFrom": "projects_assignments",
+          "tableTo": "projects_people",
+          "columnsFrom": [
+            "projects_people_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "projects_people": {
+      "name": "projects_people",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "people_id": {
+          "name": "people_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "projects_people_project_id_projects_id_fk": {
+          "name": "projects_people_project_id_projects_id_fk",
+          "tableFrom": "projects_people",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
@@ -149,9 +201,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "projects_assignments_people_id_people_id_fk": {
-          "name": "projects_assignments_people_id_people_id_fk",
-          "tableFrom": "projects_assignments",
+        "projects_people_people_id_people_id_fk": {
+          "name": "projects_people_people_id_people_id_fk",
+          "tableFrom": "projects_people",
           "tableTo": "people",
           "columnsFrom": [
             "people_id"
