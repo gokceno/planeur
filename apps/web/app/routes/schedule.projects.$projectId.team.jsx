@@ -12,7 +12,7 @@ export const loader = async ({ request, params }) => {
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
   const { projectId } = params;
-  const people = await db.query.people.findMany({
+  const assignedPeople = await db.query.people.findMany({
     where: (people, { eq, inArray }) =>
       inArray(
         people.id,
@@ -29,5 +29,20 @@ export const loader = async ({ request, params }) => {
       },
     },
   });
-  return json(transformPeopleWithAssignments(people, startsOn, endsOn));
+
+  const availablePeople = await db.query.people.findMany({
+    where: (people, { eq, notInArray }) =>
+      notInArray(
+        people.id,
+        db
+          .select({ peopleId: projectsPeople.peopleId })
+          .from(projectsPeople)
+          .where(eq(projectsPeople.projectId, projectId))
+      ),
+  });
+
+  return json({
+    people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),
+    availablePeople,
+  });
 };
