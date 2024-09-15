@@ -1,11 +1,19 @@
 import { db } from "../utils/db.js";
+import {
+  findAvailableProjectsByPeopleId,
+  findAssignedProjectsByPeopleId,
+} from "../utils/queries.js";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { DateTime } from "luxon";
 import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
-import { transformPeopleWithAssignments } from "../utils/transformers.js";
+import {
+  transformPeopleWithAssignments,
+  transformProjects,
+} from "../utils/transformers.js";
+import { projectsPeople } from "../schema.js";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -27,11 +35,32 @@ export const loader = async ({ request }) => {
   });
 };
 
+export const action = async ({ request }) => {
+  const form = await request.formData();
+  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+  const now = selectedWeek
+    ? DateTime.fromISO(selectedWeek)
+    : DateTime.local({ zone: "Europe/Istanbul" });
+  const startsOn = now.startOf("week");
+  const endsOn = now.endOf("week");
+  const projectId = form.get("projectId");
+  const peopleId = form.get("peopleId");
+
+  await db.insert(projectsPeople).values({ projectId, peopleId });
+
+  const assignedProjects = await findAssignedProjectsByPeopleId({ peopleId });
+  const availableProjects = await findAvailableProjectsByPeopleId({ peopleId });
+
+  return json({
+    projects: transformProjects(assignedProjects, startsOn, endsOn),
+    availableProjects,
+  });
+};
+
 const People = () => {
   const { people, startsOn, endsOn } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
-
   const [searchParams] = useSearchParams();
 
   const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
@@ -93,6 +122,7 @@ const People = () => {
             {expandedTeamMembers[id] === true && (
               <div className="mt-2 space-y-2">
                 {fetcher.data &&
+                  fetcher.data.projects &&
                   fetcher.data.projects.map(
                     ({ projectName, capacities }, i) => (
                       <div key={i} className="flex items-center">
@@ -112,15 +142,26 @@ const People = () => {
                 {fetcher.data && !!fetcher.data.availableProjects?.length && (
                   <div className="flex items-center mt-2">
                     <div className="w-1/4 pr-4">
-                      <select className="w-3/4 p-2 border rounded text-sm ml-6">
-                        <option value="">Add project to user...</option>
-                        {fetcher.data &&
-                          fetcher.data.availableProjects.map((project) => (
-                            <option value="{project.id}">
-                              {project.projectName}
-                            </option>
-                          ))}
-                      </select>
+                      <fetcher.Form method="post">
+                        <select
+                          name="projectId"
+                          className="w-3/4 p-2 border rounded text-sm ml-6"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              e.target.form.requestSubmit();
+                            }
+                          }}
+                        >
+                          <option>Add project to user...</option>
+                          {fetcher.data &&
+                            fetcher.data.availableProjects.map((project) => (
+                              <option key={project.id} value={project.id}>
+                                {project.projectName}
+                              </option>
+                            ))}
+                        </select>
+                        <input type="hidden" name="peopleId" value={id} />
+                      </fetcher.Form>
                     </div>
                   </div>
                 )}
