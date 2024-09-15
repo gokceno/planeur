@@ -92,31 +92,38 @@ const Projects = () => {
             {expandedTeamMembers[id] === true && (
               <div className="mt-2 space-y-2">
                 {fetcher.data &&
-                  fetcher.data.map(({ firstname, lastname, capacities }, i) => (
-                    <div key={i} className="flex items-center">
-                      <div className="w-1/4 pr-4 flex items-center">
-                        <div className="text-sm ml-6">
-                          {firstname} {lastname}
+                  fetcher.data.people.map(
+                    ({ firstname, lastname, capacities }, i) => (
+                      <div key={i} className="flex items-center">
+                        <div className="w-1/4 pr-4 flex items-center">
+                          <div className="text-sm ml-6">
+                            {firstname} {lastname}
+                          </div>
                         </div>
+                        <CapacityBar
+                          title={`${firstname} ${lastname}`}
+                          startsOn={startsOn}
+                          endsOn={endsOn}
+                          capacities={capacities}
+                          style="small"
+                        />
                       </div>
-                      <CapacityBar
-                        title={`${firstname} ${lastname}`}
-                        startsOn={startsOn}
-                        endsOn={endsOn}
-                        capacities={capacities}
-                        style="small"
-                      />
+                    )
+                  )}
+                {fetcher.data && !!fetcher.data.availablePeople?.length && (
+                  <div className="flex items-center mt-2">
+                    <div className="w-1/4 pr-4">
+                      <select className="w-3/4 p-2 border rounded text-sm ml-6">
+                        <option value="">Add person to project...</option>
+                        {fetcher.data.availablePeople.map((people) => (
+                          <option value="{people.id}">
+                            {people.firstname} {people.lastname}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
-                <div className="flex items-center mt-2">
-                  <div className="w-1/4 pr-4">
-                    <select className="w-3/4 p-2 border rounded text-sm ml-6">
-                      <option value="">Add person...</option>
-                      <option value="charlie">Erman Milli</option>
-                      <option value="diana">İhsan Kaşkay</option>
-                    </select>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
