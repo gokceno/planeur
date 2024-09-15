@@ -1,8 +1,10 @@
 import { json } from "@remix-run/node";
 import { DateTime } from "luxon";
 import { transformPeopleWithAssignments } from "../utils/transformers.js";
-import { db } from "../utils/db.js";
-import { projectsPeople } from "../schema.js";
+import {
+  findAssignedPeopleByProjectId,
+  findAvailablePeopleByProjectId,
+} from "../utils/queries.js";
 
 export const loader = async ({ request, params }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -12,34 +14,9 @@ export const loader = async ({ request, params }) => {
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
   const { projectId } = params;
-  const assignedPeople = await db.query.people.findMany({
-    where: (people, { eq, inArray }) =>
-      inArray(
-        people.id,
-        db
-          .select({ peopleId: projectsPeople.peopleId })
-          .from(projectsPeople)
-          .where(eq(projectsPeople.projectId, projectId))
-      ),
-    with: {
-      projects: {
-        where: (projectsPeople, { eq }) =>
-          eq(projectsPeople.projectId, projectId),
-        with: { assignments: true },
-      },
-    },
-  });
 
-  const availablePeople = await db.query.people.findMany({
-    where: (people, { eq, notInArray }) =>
-      notInArray(
-        people.id,
-        db
-          .select({ peopleId: projectsPeople.peopleId })
-          .from(projectsPeople)
-          .where(eq(projectsPeople.projectId, projectId))
-      ),
-  });
+  const assignedPeople = await findAssignedPeopleByProjectId({ projectId });
+  const availablePeople = await findAvailablePeopleByProjectId({ projectId });
 
   return json({
     people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),

@@ -154,8 +154,8 @@ const People = () => {
                         >
                           <option>Add project to user...</option>
                           {fetcher.data &&
-                            fetcher.data.availableProjects.map((project) => (
-                              <option key={project.id} value={project.id}>
+                            fetcher.data.availableProjects.map((project, i) => (
+                              <option key={i} value={project.id}>
                                 {project.projectName}
                               </option>
                             ))}

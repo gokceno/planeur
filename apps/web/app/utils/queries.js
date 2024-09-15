@@ -1,6 +1,39 @@
 import { projectsPeople } from "../schema.js";
 import { db } from "../utils/db.js";
 
+export const findAssignedPeopleByProjectId = ({ projectId }) => {
+  return db.query.people.findMany({
+    where: (people, { eq, inArray }) =>
+      inArray(
+        people.id,
+        db
+          .select({ peopleId: projectsPeople.peopleId })
+          .from(projectsPeople)
+          .where(eq(projectsPeople.projectId, projectId))
+      ),
+    with: {
+      projects: {
+        where: (projectsPeople, { eq }) =>
+          eq(projectsPeople.projectId, projectId),
+        with: { assignments: true },
+      },
+    },
+  });
+};
+
+export const findAvailablePeopleByProjectId = ({ projectId }) => {
+  return db.query.people.findMany({
+    where: (people, { eq, notInArray }) =>
+      notInArray(
+        people.id,
+        db
+          .select({ peopleId: projectsPeople.peopleId })
+          .from(projectsPeople)
+          .where(eq(projectsPeople.projectId, projectId))
+      ),
+  });
+};
+
 export const findAssignedProjectsByPeopleId = ({ peopleId }) => {
   return db.query.projects.findMany({
     where: (projects, { eq, inArray }) =>

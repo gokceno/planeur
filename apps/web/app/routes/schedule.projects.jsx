@@ -1,11 +1,19 @@
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { DateTime } from "luxon";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
-import { transformProjects } from "../utils/transformers.js";
+import { projectsPeople } from "../schema.js";
 import { db } from "../utils/db.js";
+import {
+  findAssignedPeopleByProjectId,
+  findAvailablePeopleByProjectId,
+} from "../utils/queries.js";
+import {
+  transformProjects,
+  transformPeopleWithAssignments,
+} from "../utils/transformers.js";
 
 export const loader = async ({ request }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -25,6 +33,30 @@ export const loader = async ({ request }) => {
     projects: transformProjects(projects, startsOn, endsOn),
     startsOn,
     endsOn,
+  });
+};
+
+export const action = async ({ request }) => {
+  const form = await request.formData();
+  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+  const now = selectedWeek
+    ? DateTime.fromISO(selectedWeek)
+    : DateTime.local({ zone: "Europe/Istanbul" });
+  const startsOn = now.startOf("week");
+  const endsOn = now.endOf("week");
+  const projectId = form.get("projectId");
+  const peopleId = form.get("peopleId");
+
+  await db.insert(projectsPeople).values({ projectId, peopleId });
+
+  const assignedPeople = await findAssignedPeopleByProjectId({ projectId });
+  const availablePeople = await findAvailablePeopleByProjectId({
+    projectId,
+  });
+
+  return json({
+    people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),
+    availablePeople,
   });
 };
 
@@ -113,14 +145,26 @@ const Projects = () => {
                 {fetcher.data && !!fetcher.data.availablePeople?.length && (
                   <div className="flex items-center mt-2">
                     <div className="w-1/4 pr-4">
-                      <select className="w-3/4 p-2 border rounded text-sm ml-6">
-                        <option value="">Add person to project...</option>
-                        {fetcher.data.availablePeople.map((people) => (
-                          <option value="{people.id}">
-                            {people.firstname} {people.lastname}
-                          </option>
-                        ))}
-                      </select>
+                      <fetcher.Form method="post">
+                        <select
+                          name="peopleId"
+                          className="w-3/4 p-2 border rounded text-sm ml-6"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              e.target.form.requestSubmit();
+                            }
+                          }}
+                        >
+                          <option>Add user to project...</option>
+                          {fetcher.data &&
+                            fetcher.data.availablePeople.map((people, i) => (
+                              <option key={i} value={people.id}>
+                                {people.firstname} {people.lastname}
+                              </option>
+                            ))}
+                        </select>
+                        <input type="hidden" name="projectId" value={id} />
+                      </fetcher.Form>
                     </div>
                   </div>
                 )}
