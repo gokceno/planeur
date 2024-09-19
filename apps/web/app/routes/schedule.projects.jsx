@@ -1,5 +1,11 @@
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  Outlet,
+  useFetcher,
+  useLoaderData,
+  useSearchParams,
+  Link,
+} from "@remix-run/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
@@ -129,7 +135,9 @@ const Projects = () => {
                       <div key={i} className="flex items-center">
                         <div className="w-1/4 pr-4 flex items-center">
                           <div className="text-sm ml-6">
-                            {firstname} {lastname}
+                            <Link to="/schedule/projects/assignments">
+                              {firstname} {lastname}
+                            </Link>
                           </div>
                         </div>
                         <CapacityBar
@@ -173,6 +181,7 @@ const Projects = () => {
           </div>
         ))}
       </div>
+      <Outlet />
     </div>
   );
 };
