@@ -54,6 +54,7 @@ export const projectsPeople = sqliteTable("projects_people", {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
+
 export const projectsPeopleRelations = relations(
   projectsPeople,
   ({ one, many }) => ({

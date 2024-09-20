@@ -130,26 +130,26 @@ const Projects = () => {
             {expandedTeamMembers[id] === true && (
               <div className="mt-2 space-y-2">
                 {fetcher.data &&
-                  fetcher.data.people.map(
-                    ({ firstname, lastname, capacities }, i) => (
-                      <div key={i} className="flex items-center">
-                        <div className="w-1/4 pr-4 flex items-center">
-                          <div className="text-sm ml-6">
-                            <Link to="/schedule/projects/assignments">
-                              {firstname} {lastname}
-                            </Link>
-                          </div>
+                  fetcher.data.people.map(({ person, capacities, id }, i) => (
+                    <div key={i} className="flex items-center">
+                      <div className="w-1/4 pr-4 flex items-center">
+                        <div className="text-sm ml-6">
+                          <Link
+                            to={`/schedule/projects/assignments/${id}?w=${selectedWeek}`}
+                          >
+                            {person.firstname} {person.lastname}
+                          </Link>
                         </div>
-                        <CapacityBar
-                          title={`${firstname} ${lastname}`}
-                          startsOn={startsOn}
-                          endsOn={endsOn}
-                          capacities={capacities}
-                          style="small"
-                        />
                       </div>
-                    )
-                  )}
+                      <CapacityBar
+                        title={`${person.firstname} ${person.lastname}`}
+                        startsOn={startsOn}
+                        endsOn={endsOn}
+                        capacities={capacities}
+                        style="small"
+                      />
+                    </div>
+                  ))}
                 {fetcher.data && !!fetcher.data.availablePeople?.length && (
                   <div className="flex items-center mt-2">
                     <div className="w-1/4 pr-4">

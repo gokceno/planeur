@@ -2,21 +2,12 @@ import { projectsPeople } from "../schema.js";
 import { db } from "../utils/db.js";
 
 export const findAssignedPeopleByProjectId = ({ projectId }) => {
-  return db.query.people.findMany({
-    where: (people, { eq, inArray }) =>
-      inArray(
-        people.id,
-        db
-          .select({ peopleId: projectsPeople.peopleId })
-          .from(projectsPeople)
-          .where(eq(projectsPeople.projectId, projectId))
-      ),
+  return db.query.projectsPeople.findMany({
+    where: (projectsPeople, { eq }) => eq(projectsPeople.projectId, projectId),
     with: {
-      projects: {
-        where: (projectsPeople, { eq }) =>
-          eq(projectsPeople.projectId, projectId),
-        with: { assignments: true },
-      },
+      person: true,
+      project: true,
+      assignments: true,
     },
   });
 };

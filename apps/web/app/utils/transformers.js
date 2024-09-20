@@ -1,6 +1,10 @@
 import { DateTime } from "luxon";
 
-export const transformPeopleWithAssignments = (people, startsOn, endsOn) => {
+export const transformProjectsViaPeopleWithAssignments = (
+  people,
+  startsOn,
+  endsOn
+) => {
   return people.map((person) => {
     const capacityMap = new Map();
     person.projects.forEach((project) => {
@@ -22,6 +26,49 @@ export const transformPeopleWithAssignments = (people, startsOn, endsOn) => {
           }
         }
       });
+    });
+    // Convert the map to an array of date ranges with capacities
+    const capacities = [];
+    let currentRange = null;
+    Array.from(capacityMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([date, capacity]) => {
+        if (!currentRange || currentRange.capacity !== capacity) {
+          if (currentRange) {
+            capacities.push(currentRange);
+          }
+          currentRange = { startsOn: date, endsOn: date, capacity };
+        } else {
+          currentRange.endsOn = date;
+        }
+      });
+    if (currentRange) {
+      capacities.push(currentRange);
+    }
+    return { ...person, capacities };
+  });
+};
+
+export const transformPeopleWithAssignments = (people, startsOn, endsOn) => {
+  return people.map((person) => {
+    const capacityMap = new Map();
+    person.assignments.forEach((assignment) => {
+      const assignmentStart = DateTime.fromISO(assignment.startsOn);
+      const assignmentEnd = DateTime.fromISO(assignment.endsOn);
+      // Calculate the overlap with the limit range
+      const start = assignmentStart < startsOn ? startsOn : assignmentStart;
+      const end = assignmentEnd > endsOn ? endsOn : assignmentEnd;
+      if (start <= end) {
+        let current = start;
+        while (current <= end) {
+          const dateKey = current.toISODate();
+          capacityMap.set(
+            dateKey,
+            (capacityMap.get(dateKey) || 0) + assignment.capacity
+          );
+          current = current.plus({ days: 1 });
+        }
+      }
     });
     // Convert the map to an array of date ranges with capacities
     const capacities = [];

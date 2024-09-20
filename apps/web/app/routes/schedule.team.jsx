@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import {
-  transformPeopleWithAssignments,
+  transformProjectsViaPeopleWithAssignments,
   transformProjects,
 } from "../utils/transformers.js";
 import { projectsPeople } from "../schema.js";
@@ -29,7 +29,7 @@ export const loader = async ({ request }) => {
   });
 
   return json({
-    people: transformPeopleWithAssignments(people, startsOn, endsOn),
+    people: transformProjectsViaPeopleWithAssignments(people, startsOn, endsOn),
     startsOn,
     endsOn,
   });
