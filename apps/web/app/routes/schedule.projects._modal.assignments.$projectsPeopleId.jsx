@@ -9,13 +9,27 @@ import {
 } from "@remix-run/react";
 import { projectsAssignments } from "../schema.js";
 import { eq } from "drizzle-orm";
+import CapacityInputWithDates from "../components/capacity-input-with-dates.jsx";
 
 export const action = async ({ request, params }) => {
-  // const form = await request.formData();
+  const form = await request.formData();
+  const startsOn = form.getAll("startsOn");
+  const endsOn = form.getAll("endsOn");
+  const capacity = form.getAll("capacity");
   const { projectsPeopleId } = params;
   await db
     .delete(projectsAssignments)
     .where(eq(projectsAssignments.projectsPeopleId, projectsPeopleId));
+
+  for (let i = 0; i < startsOn.length; i++) {
+    await db.insert(projectsAssignments).values({
+      projectsPeopleId,
+      startsOn: startsOn[i],
+      endsOn: endsOn[i],
+      capacity: capacity[i],
+    });
+  }
+
   return json({ ok: true });
 };
 
@@ -24,6 +38,10 @@ export const loader = async ({ params }) => {
   const assignments = await db.query.projectsAssignments.findMany({
     where: (projectsAssignments, { eq }) =>
       eq(projectsAssignments.projectsPeopleId, projectsPeopleId),
+    orderBy: (projectsAssignments, { asc }) => [
+      asc(projectsAssignments.startsOn),
+      asc(projectsAssignments.endsOn),
+    ],
   });
   return json({
     assignments,
@@ -44,6 +62,15 @@ export const AssignmentsRoute = () => {
     ]);
   };
 
+  const fetcher = useFetcher();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (fetcher.data && fetcher.data.ok) {
+      navigate(`/schedule/projects/?w=${selectedWeek}`);
+    }
+  }, [fetcher.data, navigate, selectedWeek]);
+
   const handleInputChange = (index, field, value) => {
     const updatedAssignments = [...assignments];
     updatedAssignments[index][field] = value;
@@ -54,75 +81,21 @@ export const AssignmentsRoute = () => {
     const updatedAssignments = assignments.filter((_, i) => i !== index);
     setAssignments(updatedAssignments);
   };
-  const fetcher = useFetcher();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (fetcher.data && fetcher.data.ok) {
-      navigate(`/schedule/projects/?w=${selectedWeek}`);
-    }
-  }, [fetcher.data, navigate, selectedWeek]);
   return (
     <div className="container mx-auto">
       <div className="flex flex-col">
         <fetcher.Form className="space-y-3 w-full max-w-2xl" method="post">
-          {assignments.map((assignment, index) => (
-            <div key={index} className="flex space-x-3 items-center">
-              <input
-                type="date"
-                name="startsOn"
-                className="form-input px-3 py-1 border rounded text-xs"
-                value={assignment.startsOn}
-                onChange={(e) =>
-                  handleInputChange(index, "startDate", e.target.value)
-                }
-              />
-              <input
-                type="date"
-                name="endsOn"
-                className="form-input px-3 py-1 border rounded text-xs"
-                value={assignment.endsOn}
-                onChange={(e) =>
-                  handleInputChange(index, "endDate", e.target.value)
-                }
-              />
-              <input
-                type="number"
-                name="capacity"
-                className="form-input px-3 py-1 border rounded text-xs"
-                min="1"
-                max="8"
-                step="0.5"
-                value={assignment.capacity}
-                onChange={(e) =>
-                  handleInputChange(
-                    index,
-                    "capacity",
-                    parseFloat(e.target.value)
-                  )
-                }
-              />
-              <button
-                type="button"
-                className="text-red-500 hover:text-red-700"
-                onClick={() => handleRemoveAssignment(index)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </div>
+          {assignments.map((assignment, i) => (
+            <CapacityInputWithDates
+              key={i}
+              index={i}
+              handleInputChange={handleInputChange}
+              handleRemoveAssignment={handleRemoveAssignment}
+              startsOn={assignment.startsOn}
+              endsOn={assignment.endsOn}
+              capacity={assignment.capacity}
+            />
           ))}
           <button
             type="button"
