@@ -4,7 +4,7 @@ import {
   findAvailableProjectsByPeopleId,
   findAssignedProjectsByPeopleId,
 } from "../utils/queries.js";
-import { transformProjects } from "../utils/transformers.js";
+import { transformPeopleWithAssignments } from "../utils/transformers.js";
 
 export const loader = async ({ request, params }) => {
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
@@ -19,7 +19,11 @@ export const loader = async ({ request, params }) => {
   const availableProjects = await findAvailableProjectsByPeopleId({ peopleId });
 
   return json({
-    projects: transformProjects(assignedProjects, startsOn, endsOn),
+    projects: transformPeopleWithAssignments(
+      assignedProjects,
+      startsOn,
+      endsOn
+    ),
     availableProjects,
   });
 };

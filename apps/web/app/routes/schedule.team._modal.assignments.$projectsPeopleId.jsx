@@ -36,7 +36,7 @@ export const AssignmentsRoute = () => {
 
   useEffect(() => {
     if (fetcher.data && fetcher.data.ok) {
-      navigate(`/schedule/projects/?w=${selectedWeek}`);
+      navigate(`/schedule/team/?w=${selectedWeek}`);
     }
   }, [fetcher.data, navigate, selectedWeek]);
 

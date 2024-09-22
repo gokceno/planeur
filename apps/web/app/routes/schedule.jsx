@@ -40,11 +40,11 @@ const Schedule = () => {
           </Link>
           <Link
             className={`px-4 py-2 rounded ${
-              useMatches().some((match) => match.pathname === "/schedule/team")
+              useMatches().some((match) => match.pathname === "/schedule/team/")
                 ? "bg-gray-200"
                 : "bg-white border"
             }`}
-            to="/schedule/team"
+            to="/schedule/team/"
           >
             Team
           </Link>

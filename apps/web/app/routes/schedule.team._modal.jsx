@@ -9,7 +9,7 @@ export default function ModalRoute() {
   return (
     <Dialog.Root
       defaultOpen="true"
-      onOpenChange={() => navigate(`/schedule/projects/?w=${selectedWeek}`)}
+      onOpenChange={() => navigate(`/schedule/team/?w=${selectedWeek}`)}
     >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50" />

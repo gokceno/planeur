@@ -4,14 +4,20 @@ import {
   findAssignedProjectsByPeopleId,
 } from "../utils/queries.js";
 import { json } from "@remix-run/node";
-import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useSearchParams,
+  Link,
+  Outlet,
+} from "@remix-run/react";
 import { DateTime } from "luxon";
 import { useState, useEffect } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import {
   transformProjectsViaPeopleWithAssignments,
-  transformProjects,
+  transformPeopleWithAssignments,
 } from "../utils/transformers.js";
 import { projectsPeople } from "../schema.js";
 
@@ -52,7 +58,11 @@ export const action = async ({ request }) => {
   const availableProjects = await findAvailableProjectsByPeopleId({ peopleId });
 
   return json({
-    projects: transformProjects(assignedProjects, startsOn, endsOn),
+    projects: transformPeopleWithAssignments(
+      assignedProjects,
+      startsOn,
+      endsOn
+    ),
     availableProjects,
   });
 };
@@ -124,13 +134,19 @@ const People = () => {
                 {fetcher.data &&
                   fetcher.data.projects &&
                   fetcher.data.projects.map(
-                    ({ projectName, capacities }, i) => (
+                    ({ project, capacities, id }, i) => (
                       <div key={i} className="flex items-center">
                         <div className="w-1/4 pr-4 flex items-center">
-                          <div className="text-sm ml-6">{projectName}</div>
+                          <div className="text-sm ml-6">
+                            <Link
+                              to={`/schedule/team/assignments/${id}?w=${selectedWeek}`}
+                            >
+                              {project.projectName}
+                            </Link>
+                          </div>
                         </div>
                         <CapacityBar
-                          title={`${projectName}`}
+                          title={`${project.projectName}`}
                           startsOn={startsOn}
                           endsOn={endsOn}
                           capacities={capacities}
@@ -170,6 +186,7 @@ const People = () => {
           </div>
         ))}
       </div>
+      <Outlet />
     </div>
   );
 };

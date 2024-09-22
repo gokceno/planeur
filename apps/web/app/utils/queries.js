@@ -26,21 +26,12 @@ export const findAvailablePeopleByProjectId = ({ projectId }) => {
 };
 
 export const findAssignedProjectsByPeopleId = ({ peopleId }) => {
-  return db.query.projects.findMany({
-    where: (projects, { eq, inArray }) =>
-      inArray(
-        projects.id,
-        db
-          .select({ projectId: projectsPeople.projectId })
-          .from(projectsPeople)
-          .where(eq(projectsPeople.peopleId, peopleId))
-      ),
+  return db.query.projectsPeople.findMany({
+    where: (projectsPeople, { eq }) => eq(projectsPeople.peopleId, peopleId),
     with: {
-      people: {
-        where: (projectsPeople, { eq }) =>
-          eq(projectsPeople.peopleId, peopleId),
-        with: { assignments: true },
-      },
+      person: true,
+      project: true,
+      assignments: true,
     },
   });
 };
