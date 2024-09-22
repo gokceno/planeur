@@ -1,6 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { DateTime } from "luxon";
-
 import { Outlet, useNavigate, useSearchParams } from "@remix-run/react";
 
 export default function ModalRoute() {
@@ -19,7 +18,7 @@ export default function ModalRoute() {
           className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto"
         >
           <Dialog.Title className="text-1xl font-bold text-blue-800 mb-4">
-            Gökçen's Assignments for VillaSepeti Web
+            Assignments
           </Dialog.Title>
           <Outlet />
           <Dialog.Close asChild>

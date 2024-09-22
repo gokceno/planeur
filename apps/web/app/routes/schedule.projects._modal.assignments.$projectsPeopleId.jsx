@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { db } from "../utils/db.js";
 import { json } from "@remix-run/node";
 import {
-  useLoaderData,
   useFetcher,
+  useLoaderData,
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
-import { DateTime } from "luxon";
-import { projectsAssignments } from "../schema.js";
 import { eq } from "drizzle-orm";
+import { DateTime } from "luxon";
+import { useEffect, useState } from "react";
 import CapacityInputWithDates from "../components/capacity-input-with-dates.jsx";
+import { projectsAssignments } from "../schema.js";
+import { db } from "../utils/db.js";
 
 export const action = async ({ request, params }) => {
   const form = await request.formData();
@@ -51,7 +51,11 @@ export const loader = async ({ params }) => {
 
 export const AssignmentsRoute = () => {
   const { assignments: loadedAssignments } = useLoaderData();
-  const [assignments, setAssignments] = useState(loadedAssignments);
+  const [assignments, setAssignments] = useState(
+    loadedAssignments.length
+      ? loadedAssignments
+      : [{ startDate: "", endDate: "", capacity: 0 }]
+  );
 
   const [searchParams] = useSearchParams();
   const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
@@ -83,11 +87,12 @@ export const AssignmentsRoute = () => {
     setAssignments(updatedAssignments);
   };
   const getTotalCapacity = () => {
-    return assignments.reduce((total, assignment) => {
-      const start = DateTime.fromISO(assignment.startsOn);
-      const end = DateTime.fromISO(assignment.endsOn);
+    return assignments.reduce((total, { startsOn, endsOn, capacity }) => {
+      if (!startsOn || !endsOn || !capacity) return 0;
+      const start = DateTime.fromISO(startsOn);
+      const end = DateTime.fromISO(endsOn);
       const days = end.diff(start, "days").days + 1;
-      return total + days * assignment.capacity;
+      return total + days * capacity;
     }, 0);
   };
 
@@ -106,6 +111,11 @@ export const AssignmentsRoute = () => {
               capacity={assignment.capacity}
             />
           ))}
+          {!assignments.length && (
+            <p class="py-2 text-xs">
+              Click "Add Row" to start creating new assignments.
+            </p>
+          )}
           <button
             type="button"
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded text-xs mr-2"
