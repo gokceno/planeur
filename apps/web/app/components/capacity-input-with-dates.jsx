@@ -66,7 +66,7 @@ const CapacityInputWithDates = ({
         </svg>
       </button>
       <span className="text-xs bg-gray-300 p-1 px-2 rounded">
-        {`total of ${calculateTotalHours().toFixed(1)} hrs`}
+        {`${calculateTotalHours().toFixed(1)} hrs`}
       </span>
     </div>
   );

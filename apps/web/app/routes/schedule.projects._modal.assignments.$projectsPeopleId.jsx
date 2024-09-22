@@ -7,6 +7,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
+import { DateTime } from "luxon";
 import { projectsAssignments } from "../schema.js";
 import { eq } from "drizzle-orm";
 import CapacityInputWithDates from "../components/capacity-input-with-dates.jsx";
@@ -81,6 +82,14 @@ export const AssignmentsRoute = () => {
     const updatedAssignments = assignments.filter((_, i) => i !== index);
     setAssignments(updatedAssignments);
   };
+  const getTotalCapacity = () => {
+    return assignments.reduce((total, assignment) => {
+      const start = DateTime.fromISO(assignment.startsOn);
+      const end = DateTime.fromISO(assignment.endsOn);
+      const days = end.diff(start, "days").days + 1;
+      return total + days * assignment.capacity;
+    }, 0);
+  };
 
   return (
     <div className="container mx-auto">
@@ -108,7 +117,7 @@ export const AssignmentsRoute = () => {
             type="submit"
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-xs"
           >
-            Save & Close
+            Save ({getTotalCapacity().toFixed(1)} hrs) & Close
           </button>
         </fetcher.Form>
       </div>
