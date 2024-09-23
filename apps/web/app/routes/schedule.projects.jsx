@@ -94,7 +94,7 @@ const Projects = () => {
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {projects.map(({ projectName, capacities, id }, i) => (
+        {projects.map(({ projectName, capacities, id, totalCapacity }, i) => (
           <div key={i}>
             <div className="flex items-center">
               <button
@@ -116,7 +116,9 @@ const Projects = () => {
                       d="M9 5l7 7-7 7"
                     ></path>
                   </svg>
-                  <div className="font-semibold">{projectName}</div>
+                  <div className="font-semibold">
+                    {projectName} &bull; {totalCapacity} hrs
+                  </div>
                 </div>
               </button>
               <CapacityBar

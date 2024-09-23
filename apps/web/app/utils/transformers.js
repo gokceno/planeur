@@ -45,7 +45,11 @@ export const transformProjectsViaPeopleWithAssignments = (
     if (currentRange) {
       capacities.push(currentRange);
     }
-    return { ...person, capacities };
+    const totalCapacity = capacities.reduce(
+      (sum, capacity) => sum + capacity.capacity,
+      0
+    );
+    return { ...person, capacities, totalCapacity };
   });
 };
 
@@ -134,7 +138,16 @@ export const transformProjects = (inputArray, limitStart, limitEnd) => {
     if (currentRange) {
       capacities.push(currentRange);
     }
-    return { projectName: project.projectName, id: project.id, capacities };
+    const totalCapacity = capacities.reduce(
+      (sum, capacity) => sum + capacity.capacity,
+      0
+    );
+    return {
+      projectName: project.projectName,
+      id: project.id,
+      capacities,
+      totalCapacity,
+    };
   });
 };
 
