@@ -117,7 +117,7 @@ const Projects = () => {
                     ></path>
                   </svg>
                   <div className="font-semibold">
-                    {projectName} &bull; {totalCapacity} hrs
+                    {projectName} &bull; {totalCapacity.toFixed(1)} hrs
                   </div>
                 </div>
               </button>

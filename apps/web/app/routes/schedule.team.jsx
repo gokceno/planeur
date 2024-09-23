@@ -118,7 +118,8 @@ const People = () => {
                       ></path>
                     </svg>
                     <div className="font-semibold">
-                      {firstname} {lastname} &bull; {totalCapacity} hrs
+                      {firstname} {lastname} &bull; {totalCapacity.toFixed(1)}{" "}
+                      hrs
                     </div>
                   </div>
                 </button>
