@@ -45,11 +45,13 @@ export const transformProjectsViaPeopleWithAssignments = (
     if (currentRange) {
       capacities.push(currentRange);
     }
-    const totalCapacity = capacities.reduce(
-      (sum, capacity) => sum + capacity.capacity,
-      0
-    );
-    return { ...person, capacities, totalCapacity };
+    const periodicCapacity = capacities.reduce((sum, capacity) => {
+      const start = DateTime.fromISO(capacity.startsOn);
+      const end = DateTime.fromISO(capacity.endsOn);
+      const days = end.diff(start, "days").days + 1;
+      return sum + capacity.capacity * days;
+    }, 0);
+    return { ...person, capacities, periodicCapacity };
   });
 };
 
@@ -92,7 +94,13 @@ export const transformPeopleWithAssignments = (people, startsOn, endsOn) => {
     if (currentRange) {
       capacities.push(currentRange);
     }
-    return { ...person, capacities };
+    const periodicCapacity = capacities.reduce((sum, capacity) => {
+      const start = DateTime.fromISO(capacity.startsOn);
+      const end = DateTime.fromISO(capacity.endsOn);
+      const days = end.diff(start, "days").days + 1;
+      return sum + capacity.capacity * days;
+    }, 0);
+    return { ...person, capacities, periodicCapacity };
   });
 };
 
@@ -138,15 +146,17 @@ export const transformProjects = (inputArray, limitStart, limitEnd) => {
     if (currentRange) {
       capacities.push(currentRange);
     }
-    const totalCapacity = capacities.reduce(
-      (sum, capacity) => sum + capacity.capacity,
-      0
-    );
+    const periodicCapacity = capacities.reduce((sum, capacity) => {
+      const start = DateTime.fromISO(capacity.startsOn);
+      const end = DateTime.fromISO(capacity.endsOn);
+      const days = end.diff(start, "days").days + 1;
+      return sum + capacity.capacity * days;
+    }, 0);
     return {
       projectName: project.projectName,
       id: project.id,
       capacities,
-      totalCapacity,
+      periodicCapacity,
     };
   });
 };

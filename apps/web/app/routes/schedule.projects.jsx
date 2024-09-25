@@ -94,94 +94,99 @@ const Projects = () => {
     <div className="p-4">
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
-        {projects.map(({ projectName, capacities, id, totalCapacity }, i) => (
-          <div key={i}>
-            <div className="flex items-center">
-              <button
-                className="w-1/4 pr-4 cursor-pointer"
-                onClick={() => toggleTeamMember(id)}
-              >
-                <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                  <div className="font-semibold">
-                    {projectName} &bull; {totalCapacity.toFixed(1)} hrs
-                  </div>
-                </div>
-              </button>
-              <CapacityBar
-                title={projectName}
-                startsOn={startsOn}
-                endsOn={endsOn}
-                capacities={capacities}
-                style="large"
-              />
-            </div>
-            {expandedTeamMembers[id] === true && (
-              <div className="mt-2 space-y-2">
-                {fetcher.data &&
-                  fetcher.data.people.map(({ person, capacities, id }, i) => (
-                    <div key={i} className="flex items-center">
-                      <div className="w-1/4 pr-4 flex items-center">
-                        <div className="text-sm ml-6">
-                          <Link
-                            to={`/schedule/projects/assignments/${id}?w=${selectedWeek}`}
-                          >
-                            {person.firstname} {person.lastname}
-                          </Link>
-                        </div>
-                      </div>
-                      <CapacityBar
-                        title={`${person.firstname} ${person.lastname}`}
-                        startsOn={startsOn}
-                        endsOn={endsOn}
-                        capacities={capacities}
-                        style="small"
-                      />
-                    </div>
-                  ))}
-                {fetcher.data && !!fetcher.data.availablePeople?.length && (
-                  <div className="flex items-center mt-2">
-                    <div className="w-1/4 pr-4">
-                      <fetcher.Form method="post">
-                        <select
-                          name="peopleId"
-                          className="w-3/4 p-2 border rounded text-sm ml-6"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              e.target.form.requestSubmit();
-                            }
-                          }}
-                        >
-                          <option>Add user to project...</option>
-                          {fetcher.data &&
-                            fetcher.data.availablePeople.map((people, i) => (
-                              <option key={i} value={people.id}>
-                                {people.firstname} {people.lastname}
-                              </option>
-                            ))}
-                        </select>
-                        <input type="hidden" name="projectId" value={id} />
-                      </fetcher.Form>
+        {projects.map(
+          ({ projectName, capacities, id, periodicCapacity }, i) => (
+            <div key={i}>
+              <div className="flex items-center">
+                <button
+                  className="w-1/4 pr-4 cursor-pointer"
+                  onClick={() => toggleTeamMember(id)}
+                >
+                  <div className="flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 5l7 7-7 7"
+                      ></path>
+                    </svg>
+                    <div className="font-semibold">
+                      {projectName} &bull; {periodicCapacity.toFixed(1)} hrs
                     </div>
                   </div>
-                )}
+                </button>
+                <CapacityBar
+                  title={projectName}
+                  startsOn={startsOn}
+                  endsOn={endsOn}
+                  capacities={capacities}
+                  style="large"
+                />
               </div>
-            )}
-          </div>
-        ))}
+              {expandedTeamMembers[id] === true && (
+                <div className="mt-2 space-y-2">
+                  {fetcher.data &&
+                    fetcher.data.people.map(
+                      ({ person, capacities, id, periodicCapacity }, i) => (
+                        <div key={i} className="flex items-center">
+                          <div className="w-1/4 pr-4 flex items-center">
+                            <div className="text-sm ml-6">
+                              <Link
+                                to={`/schedule/projects/assignments/${id}?w=${selectedWeek}`}
+                              >
+                                {person.firstname} {person.lastname} &bull;{" "}
+                                {periodicCapacity.toFixed(1)} hrs
+                              </Link>
+                            </div>
+                          </div>
+                          <CapacityBar
+                            title={`${person.firstname} ${person.lastname}`}
+                            startsOn={startsOn}
+                            endsOn={endsOn}
+                            capacities={capacities}
+                            style="small"
+                          />
+                        </div>
+                      )
+                    )}
+                  {fetcher.data && !!fetcher.data.availablePeople?.length && (
+                    <div className="flex items-center mt-2">
+                      <div className="w-1/4 pr-4">
+                        <fetcher.Form method="post">
+                          <select
+                            name="peopleId"
+                            className="w-3/4 p-2 border rounded text-sm ml-6"
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                e.target.form.requestSubmit();
+                              }
+                            }}
+                          >
+                            <option>Add user to project...</option>
+                            {fetcher.data &&
+                              fetcher.data.availablePeople.map((people, i) => (
+                                <option key={i} value={people.id}>
+                                  {people.firstname} {people.lastname}
+                                </option>
+                              ))}
+                          </select>
+                          <input type="hidden" name="projectId" value={id} />
+                        </fetcher.Form>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        )}
       </div>
       <Outlet />
     </div>

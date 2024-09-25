@@ -95,7 +95,7 @@ const People = () => {
       <DateHeader startsOn={startsOn} endsOn={endsOn} />
       <div className="space-y-2">
         {people.map(
-          ({ id, firstname, lastname, capacities, totalCapacity }, i) => (
+          ({ id, firstname, lastname, capacities, periodicCapacity }, i) => (
             <div key={i}>
               <div className="flex items-center">
                 <button
@@ -118,8 +118,8 @@ const People = () => {
                       ></path>
                     </svg>
                     <div className="font-semibold">
-                      {firstname} {lastname} &bull; {totalCapacity.toFixed(1)}{" "}
-                      hrs
+                      {firstname} {lastname} &bull;{" "}
+                      {periodicCapacity.toFixed(1)} hrs
                     </div>
                   </div>
                 </button>
@@ -136,14 +136,15 @@ const People = () => {
                   {fetcher.data &&
                     fetcher.data.projects &&
                     fetcher.data.projects.map(
-                      ({ project, capacities, id }, i) => (
+                      ({ project, capacities, id, periodicCapacity }, i) => (
                         <div key={i} className="flex items-center">
                           <div className="w-1/4 pr-4 flex items-center">
                             <div className="text-sm ml-6">
                               <Link
                                 to={`/schedule/team/assignments/${id}?w=${selectedWeek}`}
                               >
-                                {project.projectName}
+                                {project.projectName} &bull;{" "}
+                                {periodicCapacity.toFixed(1)} hrs
                               </Link>
                             </div>
                           </div>
