@@ -1,10 +1,10 @@
 import { json } from "@remix-run/node";
 import {
+  Link,
   Outlet,
   useFetcher,
   useLoaderData,
   useSearchParams,
-  Link,
 } from "@remix-run/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
@@ -17,16 +17,19 @@ import {
   findAvailablePeopleByProjectId,
 } from "../utils/queries.js";
 import {
-  transformProjects,
   transformPeopleWithAssignments,
+  transformProjects,
 } from "../utils/transformers.js";
+import { authenticator } from "../utils/auth.server";
 
 export const loader = async ({ request }) => {
+  let user = await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
+  });
   const selectedWeek = new URL(request.url)?.searchParams?.get("w");
   const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
   const startsOn = now.startOf("week");
   const endsOn = now.endOf("week");
-
   const projects = await db.query.projects.findMany({
     with: {
       people: {
@@ -34,7 +37,6 @@ export const loader = async ({ request }) => {
       },
     },
   });
-
   return json({
     projects: transformProjects(projects, startsOn, endsOn),
     startsOn,
@@ -52,14 +54,11 @@ export const action = async ({ request }) => {
   const endsOn = now.endOf("week");
   const projectId = form.get("projectId");
   const peopleId = form.get("peopleId");
-
   await db.insert(projectsPeople).values({ projectId, peopleId });
-
   const assignedPeople = await findAssignedPeopleByProjectId({ projectId });
   const availablePeople = await findAvailablePeopleByProjectId({
     projectId,
   });
-
   return json({
     people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),
     availablePeople,
@@ -70,11 +69,8 @@ const Projects = () => {
   const { projects, startsOn, endsOn } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
-
   const [searchParams] = useSearchParams();
-
   const selectedWeek = searchParams.get("w") ?? DateTime.local().toISODate();
-
   useEffect(() => {
     Object.keys(expandedTeamMembers).forEach((id) => {
       if (expandedTeamMembers[id]) {
@@ -82,7 +78,6 @@ const Projects = () => {
       }
     });
   }, [selectedWeek]);
-
   const toggleTeamMember = (id) => {
     setExpandedTeamMembers((prev) => ({ [id]: !prev[id] }));
     if (!expandedTeamMembers[id]) {

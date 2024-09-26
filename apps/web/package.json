@@ -25,7 +25,9 @@
     "isbot": "4",
     "luxon": "^3.5.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "remix-auth": "^3.7.0",
+    "remix-auth-google": "^2.0.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.11.0",
