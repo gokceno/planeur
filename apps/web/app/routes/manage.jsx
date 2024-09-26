@@ -1,5 +1,3 @@
-import { Outlet, Link } from "@remix-run/react";
-
 const Manage = () => {
   return (
     <div>
