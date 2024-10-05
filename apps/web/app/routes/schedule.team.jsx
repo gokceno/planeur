@@ -1,74 +1,105 @@
-import { db } from "../utils/db.js";
-import {
-  findAvailableProjectsByPeopleId,
-  findAssignedProjectsByPeopleId,
-} from "../utils/queries.js";
 import { json } from "@remix-run/node";
 import {
+  Link,
+  Outlet,
   useFetcher,
   useLoaderData,
   useSearchParams,
-  Link,
-  Outlet,
 } from "@remix-run/react";
 import { DateTime } from "luxon";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
-import {
-  transformProjectsViaPeopleWithAssignments,
-  transformPeopleWithAssignments,
-} from "../utils/transformers.js";
 import { projectsPeople } from "../schema.js";
+import abilityFor from "../utils/abilities.js";
+import { authenticator } from "../utils/auth.server";
+import { db } from "../utils/db.js";
+import {
+  findAssignedProjectsByPeopleId,
+  findAvailableProjectsByPeopleId,
+} from "../utils/queries.js";
+import {
+  transformPeopleWithAssignments,
+  transformProjectsViaPeopleWithAssignments,
+} from "../utils/transformers.js";
 
 export const loader = async ({ request }) => {
-  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
-  const startsOn = now.startOf("week");
-  const endsOn = now.endOf("week");
-  const people = await db.query.people.findMany({
-    with: {
-      projects: {
-        with: { assignments: true },
+  let user = await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
+  });
+  if (abilityFor(user).can("view", "Projects")) {
+    const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+    const now = selectedWeek
+      ? DateTime.fromISO(selectedWeek)
+      : DateTime.local();
+    const startsOn = now.startOf("week");
+    const endsOn = now.endOf("week");
+    const people = await db.query.people.findMany({
+      with: {
+        projects: {
+          with: { assignments: true },
+        },
       },
-    },
-  });
-
-  return json({
-    people: transformProjectsViaPeopleWithAssignments(people, startsOn, endsOn),
-    startsOn,
-    endsOn,
-  });
+    });
+    return json({
+      people: transformProjectsViaPeopleWithAssignments(
+        people,
+        startsOn,
+        endsOn,
+      ),
+      startsOn,
+      endsOn,
+      canEditProjects: abilityFor(user).can("edit", "Projects"),
+      canEditProjectsAssignments: abilityFor(user).can(
+        "edit",
+        "ProjectsAssignments",
+      ),
+    });
+  } else {
+    throw new Response("Forbidden", { status: 403 });
+  }
 };
 
 export const action = async ({ request }) => {
-  const form = await request.formData();
-  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek
-    ? DateTime.fromISO(selectedWeek)
-    : DateTime.local({ zone: "Europe/Istanbul" });
-  const startsOn = now.startOf("week");
-  const endsOn = now.endOf("week");
-  const projectId = form.get("projectId");
-  const peopleId = form.get("peopleId");
-
-  await db.insert(projectsPeople).values({ projectId, peopleId });
-
-  const assignedProjects = await findAssignedProjectsByPeopleId({ peopleId });
-  const availableProjects = await findAvailableProjectsByPeopleId({ peopleId });
-
-  return json({
-    projects: transformPeopleWithAssignments(
-      assignedProjects,
-      startsOn,
-      endsOn
-    ),
-    availableProjects,
+  let user = await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
   });
+  if (abilityFor(user).can("edit", "Projects")) {
+    const form = await request.formData();
+    const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+    const now = selectedWeek
+      ? DateTime.fromISO(selectedWeek)
+      : DateTime.local({ zone: "Europe/Istanbul" });
+    const startsOn = now.startOf("week");
+    const endsOn = now.endOf("week");
+    const projectId = form.get("projectId");
+    const peopleId = form.get("peopleId");
+    await db.insert(projectsPeople).values({ projectId, peopleId });
+    const assignedProjects = await findAssignedProjectsByPeopleId({ peopleId });
+    const availableProjects = await findAvailableProjectsByPeopleId({
+      peopleId,
+    });
+    return json({
+      projects: transformPeopleWithAssignments(
+        assignedProjects,
+        startsOn,
+        endsOn,
+      ),
+      availableProjects,
+    });
+  } else {
+    throw new Response("Forbidden", { status: 403 });
+  }
 };
 
 const People = () => {
-  const { people, startsOn, endsOn } = useLoaderData();
+  const {
+    people,
+    startsOn,
+    endsOn,
+    canEditProjects,
+    canEditProjectsAssignments,
+  } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
   const [searchParams] = useSearchParams();
@@ -140,12 +171,20 @@ const People = () => {
                         <div key={i} className="flex items-center">
                           <div className="w-1/4 pr-4 flex items-center">
                             <div className="text-sm ml-6">
-                              <Link
-                                to={`/schedule/team/assignments/${id}?w=${selectedWeek}`}
-                              >
-                                {project.projectName} &bull;{" "}
-                                {periodicCapacity.toFixed(1)} hrs
-                              </Link>
+                              {canEditProjectsAssignments && (
+                                <Link
+                                  to={`/schedule/team/assignments/${id}?w=${selectedWeek}`}
+                                >
+                                  {project.projectName} &bull;{" "}
+                                  {periodicCapacity.toFixed(1)} hrs
+                                </Link>
+                              )}
+                              {!canEditProjectsAssignments && (
+                                <span>
+                                  {project.projectName} &bull;{" "}
+                                  {periodicCapacity.toFixed(1)} hrs
+                                </span>
+                              )}
                             </div>
                           </div>
                           <CapacityBar
@@ -156,40 +195,42 @@ const People = () => {
                             style="small"
                           />
                         </div>
-                      )
+                      ),
                     )}
-                  {fetcher.data && !!fetcher.data.availableProjects?.length && (
-                    <div className="flex items-center mt-2">
-                      <div className="w-1/4 pr-4">
-                        <fetcher.Form method="post">
-                          <select
-                            name="projectId"
-                            className="w-3/4 p-2 border rounded text-sm ml-6"
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                e.target.form.requestSubmit();
-                              }
-                            }}
-                          >
-                            <option>Add project to user...</option>
-                            {fetcher.data &&
-                              fetcher.data.availableProjects.map(
-                                (project, i) => (
-                                  <option key={i} value={project.id}>
-                                    {project.projectName}
-                                  </option>
-                                )
-                              )}
-                          </select>
-                          <input type="hidden" name="peopleId" value={id} />
-                        </fetcher.Form>
+                  {canEditProjects &&
+                    fetcher.data &&
+                    !!fetcher.data.availableProjects?.length && (
+                      <div className="flex items-center mt-2">
+                        <div className="w-1/4 pr-4">
+                          <fetcher.Form method="post">
+                            <select
+                              name="projectId"
+                              className="w-3/4 p-2 border rounded text-sm ml-6"
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  e.target.form.requestSubmit();
+                                }
+                              }}
+                            >
+                              <option>Add project to user...</option>
+                              {fetcher.data &&
+                                fetcher.data.availableProjects.map(
+                                  (project, i) => (
+                                    <option key={i} value={project.id}>
+                                      {project.projectName}
+                                    </option>
+                                  ),
+                                )}
+                            </select>
+                            <input type="hidden" name="peopleId" value={id} />
+                          </fetcher.Form>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
             </div>
-          )
+          ),
         )}
       </div>
       <Outlet />

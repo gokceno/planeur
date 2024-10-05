@@ -19,7 +19,7 @@ export const projectsAssignments = sqliteTable("projects_assignments", {
     .notNull()
     .$defaultFn(() => createId()),
   projectsPeopleId: text("projects_people_id").references(
-    () => projectsPeople.id
+    () => projectsPeople.id,
   ),
   startsOn: text("starts_on").notNull(),
   endsOn: text("ends_on").notNull(),
@@ -38,6 +38,7 @@ export const people = sqliteTable("people", {
   firstname: text("firstname").notNull(),
   lastname: text("lastname").notNull(),
   capacity: integer("capacity", { mode: "number" }).notNull(),
+  role: text("role", { enum: ["ADMIN", "MANAGER", "USER"] }),
   createdAt: text("created_at")
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -67,7 +68,7 @@ export const projectsPeopleRelations = relations(
       references: [people.id],
     }),
     assignments: many(projectsAssignments),
-  })
+  }),
 );
 
 export const peopleRelations = relations(people, ({ many }) => ({
@@ -85,5 +86,5 @@ export const projectsAssignmentsRelations = relations(
       fields: [projectsAssignments.projectsPeopleId],
       references: [projectsPeople.id],
     }),
-  })
+  }),
 );

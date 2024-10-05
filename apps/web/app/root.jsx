@@ -6,8 +6,10 @@ import {
   Scripts,
   ScrollRestoration,
   useMatches,
+  useLoaderData,
 } from "@remix-run/react";
 import stylesheet from "./tailwind.css?url";
+import { authenticator } from "./utils/auth.server";
 
 export const meta = () => [
   { charset: "utf-8" },
@@ -16,6 +18,11 @@ export const meta = () => [
 ];
 
 export const links = () => [{ rel: "stylesheet", href: stylesheet }];
+
+export const loader = async ({ request }) => {
+  const user = await authenticator.isAuthenticated(request);
+  return { isAuthenticated: !!user, user };
+};
 
 export function Layout({ children }) {
   return (
@@ -34,6 +41,7 @@ export function Layout({ children }) {
 }
 
 export default function App() {
+  const { isAuthenticated } = useLoaderData();
   return (
     <div className="container mx-auto p-4">
       <nav className="flex justify-between items-center mb-4 bg-blue-800 p-2 rounded shadow">
@@ -43,7 +51,7 @@ export default function App() {
             to="/schedule/"
             className={`px-4 py-2 text-white rounded hover:bg-blue-600 ${
               useMatches().some((match) =>
-                match.pathname.startsWith("/schedule/")
+                match.pathname.startsWith("/schedule/"),
               )
                 ? "bg-blue-700"
                 : ""
@@ -55,7 +63,7 @@ export default function App() {
             to="/manage/"
             className={`px-4 py-2 text-white rounded hover:bg-blue-600 ${
               useMatches().some((match) =>
-                match.pathname.startsWith("/manage/")
+                match.pathname.startsWith("/manage/"),
               )
                 ? "bg-blue-700"
                 : ""
@@ -90,12 +98,14 @@ export default function App() {
               ></path>
             </svg>
           </Link>
-          <Link
-            to="/logout/"
-            className="px-4 py-2 text-white rounded hover:bg-blue-600"
-          >
-            Log out
-          </Link>
+          {isAuthenticated && (
+            <Link
+              to="/logout"
+              className="px-4 py-2 text-white rounded hover:bg-blue-600"
+            >
+              Log out
+            </Link>
+          )}
         </div>
       </nav>
       <Outlet />

@@ -8,6 +8,13 @@
       "when": 1726249469486,
       "tag": "0000_first_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1728131241067,
+      "tag": "0001_safe_enchantress",
+      "breakpoints": true
     }
   ]
 }

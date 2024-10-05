@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import CapacityBar from "../components/capacity-bar.jsx";
 import DateHeader from "../components/date-header.jsx";
 import { projectsPeople } from "../schema.js";
+import abilityFor from "../utils/abilities.js";
+import { authenticator } from "../utils/auth.server";
 import { db } from "../utils/db.js";
 import {
   findAssignedPeopleByProjectId,
@@ -20,53 +22,76 @@ import {
   transformPeopleWithAssignments,
   transformProjects,
 } from "../utils/transformers.js";
-import { authenticator } from "../utils/auth.server";
 
 export const loader = async ({ request }) => {
   let user = await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   });
-  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek ? DateTime.fromISO(selectedWeek) : DateTime.local();
-  const startsOn = now.startOf("week");
-  const endsOn = now.endOf("week");
-  const projects = await db.query.projects.findMany({
-    with: {
-      people: {
-        with: { assignments: true },
+  if (abilityFor(user).can("view", "Projects")) {
+    const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+    const now = selectedWeek
+      ? DateTime.fromISO(selectedWeek)
+      : DateTime.local();
+    const startsOn = now.startOf("week");
+    const endsOn = now.endOf("week");
+    const projects = await db.query.projects.findMany({
+      with: {
+        people: {
+          with: { assignments: true },
+        },
       },
-    },
-  });
-  return json({
-    projects: transformProjects(projects, startsOn, endsOn),
-    startsOn,
-    endsOn,
-  });
+    });
+    return json({
+      projects: transformProjects(projects, startsOn, endsOn),
+      startsOn,
+      endsOn,
+      canEditProjects: abilityFor(user).can("edit", "Projects"),
+      canEditProjectsAssignments: abilityFor(user).can(
+        "edit",
+        "ProjectsAssignments",
+      ),
+    });
+  } else {
+    throw new Response("Forbidden", { status: 403 });
+  }
 };
 
 export const action = async ({ request }) => {
-  const form = await request.formData();
-  const selectedWeek = new URL(request.url)?.searchParams?.get("w");
-  const now = selectedWeek
-    ? DateTime.fromISO(selectedWeek)
-    : DateTime.local({ zone: "Europe/Istanbul" });
-  const startsOn = now.startOf("week");
-  const endsOn = now.endOf("week");
-  const projectId = form.get("projectId");
-  const peopleId = form.get("peopleId");
-  await db.insert(projectsPeople).values({ projectId, peopleId });
-  const assignedPeople = await findAssignedPeopleByProjectId({ projectId });
-  const availablePeople = await findAvailablePeopleByProjectId({
-    projectId,
+  let user = await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
   });
-  return json({
-    people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),
-    availablePeople,
-  });
+  if (abilityFor(user).can("edit", "Projects")) {
+    const form = await request.formData();
+    const selectedWeek = new URL(request.url)?.searchParams?.get("w");
+    const now = selectedWeek
+      ? DateTime.fromISO(selectedWeek)
+      : DateTime.local({ zone: "Europe/Istanbul" });
+    const startsOn = now.startOf("week");
+    const endsOn = now.endOf("week");
+    const projectId = form.get("projectId");
+    const peopleId = form.get("peopleId");
+    await db.insert(projectsPeople).values({ projectId, peopleId });
+    const assignedPeople = await findAssignedPeopleByProjectId({ projectId });
+    const availablePeople = await findAvailablePeopleByProjectId({
+      projectId,
+    });
+    return json({
+      people: transformPeopleWithAssignments(assignedPeople, startsOn, endsOn),
+      availablePeople,
+    });
+  } else {
+    throw new Response("Forbidden", { status: 403 });
+  }
 };
 
 const Projects = () => {
-  const { projects, startsOn, endsOn } = useLoaderData();
+  const {
+    projects,
+    startsOn,
+    endsOn,
+    canEditProjects,
+    canEditProjectsAssignments,
+  } = useLoaderData();
   const [expandedTeamMembers, setExpandedTeamMembers] = useState({});
   const fetcher = useFetcher();
   const [searchParams] = useSearchParams();
@@ -133,12 +158,20 @@ const Projects = () => {
                         <div key={i} className="flex items-center">
                           <div className="w-1/4 pr-4 flex items-center">
                             <div className="text-sm ml-6">
-                              <Link
-                                to={`/schedule/projects/assignments/${id}?w=${selectedWeek}`}
-                              >
-                                {person.firstname} {person.lastname} &bull;{" "}
-                                {periodicCapacity.toFixed(1)} hrs
-                              </Link>
+                              {canEditProjectsAssignments && (
+                                <Link
+                                  to={`/schedule/projects/assignments/${id}?w=${selectedWeek}`}
+                                >
+                                  {person.firstname} {person.lastname} &bull;{" "}
+                                  {periodicCapacity.toFixed(1)} hrs
+                                </Link>
+                              )}
+                              {!canEditProjectsAssignments && (
+                                <span>
+                                  {person.firstname} {person.lastname} &bull;{" "}
+                                  {periodicCapacity.toFixed(1)} hrs
+                                </span>
+                              )}
                             </div>
                           </div>
                           <CapacityBar
@@ -149,38 +182,42 @@ const Projects = () => {
                             style="small"
                           />
                         </div>
-                      )
+                      ),
                     )}
-                  {fetcher.data && !!fetcher.data.availablePeople?.length && (
-                    <div className="flex items-center mt-2">
-                      <div className="w-1/4 pr-4">
-                        <fetcher.Form method="post">
-                          <select
-                            name="peopleId"
-                            className="w-3/4 p-2 border rounded text-sm ml-6"
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                e.target.form.requestSubmit();
-                              }
-                            }}
-                          >
-                            <option>Add user to project...</option>
-                            {fetcher.data &&
-                              fetcher.data.availablePeople.map((people, i) => (
-                                <option key={i} value={people.id}>
-                                  {people.firstname} {people.lastname}
-                                </option>
-                              ))}
-                          </select>
-                          <input type="hidden" name="projectId" value={id} />
-                        </fetcher.Form>
+                  {canEditProjects &&
+                    fetcher.data &&
+                    !!fetcher.data.availablePeople?.length && (
+                      <div className="flex items-center mt-2">
+                        <div className="w-1/4 pr-4">
+                          <fetcher.Form method="post">
+                            <select
+                              name="peopleId"
+                              className="w-3/4 p-2 border rounded text-sm ml-6"
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  e.target.form.requestSubmit();
+                                }
+                              }}
+                            >
+                              <option>Add user to project...</option>
+                              {fetcher.data &&
+                                fetcher.data.availablePeople.map(
+                                  (people, i) => (
+                                    <option key={i} value={people.id}>
+                                      {people.firstname} {people.lastname}
+                                    </option>
+                                  ),
+                                )}
+                            </select>
+                            <input type="hidden" name="projectId" value={id} />
+                          </fetcher.Form>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
             </div>
-          )
+          ),
         )}
       </div>
       <Outlet />
